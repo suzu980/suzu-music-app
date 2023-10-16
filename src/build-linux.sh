@@ -8,6 +8,7 @@ while getopts ":hdusrcq" opt; do
         h)
             echo "Usage: ./build-linux.sh [-hdusrcqq]"
             echo " -h  Show this information"
+            echo " -c  Build All"
             echo " -d  Faster builds that have debug symbols, and enable warnings"
             echo " -r  Run the executable after compilation"
             echo ""
@@ -16,6 +17,9 @@ while getopts ":hdusrcq" opt; do
             echo " Build a release build:                    ./build-linux.sh"
             echo " Build a debug build and run:              ./build-linux.sh -d -r"
             exit 0
+            ;;
+				c)
+            BUILD_ALL="1"
             ;;
         d)
             BUILD_DEBUG="1"
@@ -60,9 +64,15 @@ if [ -n "$BUILD_DEBUG" ]; then
 fi
 
 #Build raylib
-
 #If temp directory doesn't exist, build raylib
 TEMP_DIR="raylib" 
+
+if [ -n "$BUILD_ALL" ]; then
+	echo "Rebuilding all.."
+	if [ -d "$TEMP_DIR" ]; then 
+		rm -r $TEMP_DIR
+	fi
+fi
 
 if [ ! -d "$TEMP_DIR" ]; then 
 	echo "Building Raylib..."
@@ -83,7 +93,6 @@ echo "Build Completed~"
 # Cleanup
 rm *.o
 cd $ROOT_DIR
-rm -r $TEMP_DIR
 if [ -n "$RUN_AFTER_BUILD" ]; then
 	./$OUTPUT_DIR/$GAME_NAME
 fi
