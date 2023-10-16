@@ -39,6 +39,7 @@ done
 RAYLIB_SRC="../raylib/src"
 SOURCES="suzu_music_player.c"
 GAME_NAME="suzu_music_player"
+APP_RESOURCE_DIR="resources"
 
 #set directories
 ROOT_DIR=$PWD
@@ -50,17 +51,18 @@ OUTPUT_DIR="builds/linux"
 COMPILATION_FLAGS="-std=c99 -Os -flto" 
 FINAL_COMPILE_FLAGS="-s"
 WARNING_FLAGS="-Wall -Wextra -Wpedantic"
-DEBUG_COMPILATION_FLAGS="-std=c99 -O0 -g" 
 LINK_FLAGS="-flto -lm -ldl -lpthread -lX11 -lxcb -lGLX -lXext -lGLdispatch -lXau -lXdmcp"
-DEBUG_LINK_FLAGS="-lm -ldl -lpthread -lX11 -lxcb -lGLX -lXext -lGLdispatch -lXau -lXdmcp"
 CC=cc
 
 # Debug changes to flags
 if [ -n "$BUILD_DEBUG" ]; then
+		echo "Building in DEBUG mode..."
     OUTPUT_DIR="builds-debug/linux"
     COMPILATION_FLAGS="-std=c99 -O0 -g"
     FINAL_COMPILE_FLAGS=""
     LINK_FLAGS="-lm -ldl -lpthread -lX11 -lxcb -lGL -lGLX -lXext -lGLdispatch -lXau -lXdmcp"
+else
+	echo "Building in RELEASE mode"
 fi
 
 #Build raylib
@@ -93,6 +95,7 @@ echo "Build Completed~"
 # Cleanup
 rm *.o
 cd $ROOT_DIR
+cp -r ./$APP_RESOURCE_DIR/ ./$OUTPUT_DIR/
 if [ -n "$RUN_AFTER_BUILD" ]; then
 	./$OUTPUT_DIR/$GAME_NAME
 fi
