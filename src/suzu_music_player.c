@@ -15,7 +15,7 @@ int main(void) {
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
   int textSize = MeasureText(text, 20);
   int xpos =
-      screenWidth / 2 - MeasureText(text, 20) / 2; // MeasureText(text, 20);
+      screenWidth / 2 - textSize / 2; // MeasureText(text, 20);
   //--------------------------------------------------------------------------------------
 
   // Main game loop
