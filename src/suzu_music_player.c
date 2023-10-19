@@ -3,53 +3,63 @@
 #include <time.h>
 
 void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
-                  Color *textColor);
-
-void CustomLog(int msgType, const char *text, va_list args) {
-  char timeStr[64] = {0};
-  time_t now = time(NULL);
-  struct tm *tm_info = localtime(&now);
-
-  strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", tm_info);
-  printf("[%s] ", timeStr);
-
-  switch (msgType) {
-  case LOG_INFO:
-    printf("[INFO] : ");
-    break;
-  case LOG_ERROR:
-    printf("[ERROR]: ");
-    break;
-  case LOG_WARNING:
-    printf("[WARN] : ");
-    break;
-  case LOG_DEBUG:
-    printf("[DEBUG]: ");
-    break;
-  default:
-    break;
-  }
-
-  vprintf(text, args);
-  printf("\n");
-}
+                  Color *textColor, Vector2 *mousePos, Music *currentMusic,
+                  int *musicState);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
 void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
-                  Color *textColor) {
-  // draw file list
+                  Color *textColor, Vector2 *mousePos, Music *currentMusic,
+                  int *musicState) {
+  int initialx = 500;
+  int initialy = 150;
   int lineSpacing = 25;
+  int boxWidth = 500;
+  int boxHeight = 30;
+  int pl = 10;
+  int boxSpacing = 5;
+
   int size = pFileList->count;
   Vector2 positions[size];
+  Rectangle buttonBounds[size];
+  Vector2 textSize[size];
+  // TODO : DO NOT RENDER WHEN OFF SCREEN
   for (int idx = 0; idx < size; ++idx) {
-    positions[idx].x = 200;
-    positions[idx].y = lineSpacing * idx + 200;
-  }
-  for (int idx = 0; idx < size; ++idx) {
-    DrawTextEx(*pNormalText, GetFileNameWithoutExt(pFileList->paths[idx]), positions[idx], fontSize, 0,
-               *textColor); // DrawText(text, xpos, 200, 20, textColor);
+    bool buttonAction = false;
+    positions[idx].x = initialx + pl;
+    positions[idx].y =
+        boxHeight * idx + initialy + (float)boxHeight / 2 -
+        MeasureTextEx(*pNormalText,
+                      GetFileNameWithoutExt(pFileList->paths[idx]), fontSize, 0)
+                .y /
+            2 +
+        boxSpacing * idx;
+
+    buttonBounds[idx].x = initialx;
+    buttonBounds[idx].y = initialy + boxHeight * idx + boxSpacing * idx;
+    buttonBounds[idx].width = boxWidth;
+    buttonBounds[idx].height = boxHeight;
+    Color colorToUse = GRAY;
+    if (CheckCollisionPointRec(*mousePos, buttonBounds[idx])) {
+      colorToUse = WHITE;
+      if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+        buttonAction = true;
+      }
+    }
+    DrawRectangle(initialx, initialy + boxHeight * idx + boxSpacing * idx,
+                  boxWidth, boxHeight, colorToUse);
+    DrawTextEx(*pNormalText, GetFileNameWithoutExt(pFileList->paths[idx]),
+               positions[idx], fontSize, 0, *textColor);
+    if (buttonAction) {
+			if (*musicState != 0){
+				TraceLog(LOG_INFO,"Music Unloaded");
+				UnloadMusicStream(*currentMusic);
+			}
+      *currentMusic = LoadMusicStream(pFileList->paths[idx]);
+      PlayMusicStream(*currentMusic);
+      *musicState = 1;
+    }
   }
 }
 int main(void) {
@@ -57,7 +67,7 @@ int main(void) {
   //--------------------------------------------------------------------------------------
   int screenWidth = 1280;
   int screenHeight = 720;
-  const int lineBreakSpacing = 24;
+  const int lineBreakSpacing = 25;
   const int titleOffset = 250;
 
   Color baseColor = (Color){239, 241, 245, 255};
@@ -65,15 +75,16 @@ int main(void) {
 
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(screenWidth, screenHeight, "Music Player and Metadata Editor");
-
+  InitAudioDevice();
+  SetAudioStreamBufferSizeDefault(32768);
+  Music currentMusic; //=
+  int musicState = 0; // 0: None, 1:Playing, 2: Paused
   // Getting filelists
   FilePathList fileList =
       LoadDirectoryFilesEx("resources/sample-music", ".flac;.mp3;.m4a", true);
 
   const char *headerText = "Suzu Music Player";
-  const char *normalText = "Just a normal music player written in C and Raylib library" ;
-  // const char *normalText =
-  //"This app will be made with Cappuccin theme. https://github.com/suzu980";
+  const char *normalText = "Just a normal music player";
 
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
   int Heading1Size = 48.0f;
@@ -90,15 +101,21 @@ int main(void) {
   Vector2 HeadingVec2 = MeasureTextEx(Heading1, headerText, Heading1Size, 0);
   Vector2 NormalTextVec2 = MeasureTextEx(NormalText, normalText, mainSize, 0);
 
-  // Main game loop
+  SetTextureFilter(Heading1.texture, TEXTURE_FILTER_POINT);
+  SetTextureFilter(NormalText.texture, TEXTURE_FILTER_POINT);
+  Vector2 mousePoint = {0.0f, 0.0f};
+  // PlayMusicStream(currentMusic);
+  //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
     // Update
     //----------------------------------------------------------------------------------
     // TODO: Update your variables here
     //----------------------------------------------------------------------------------
-    SetTextureFilter(Heading1.texture, TEXTURE_FILTER_POINT);
-    SetTextureFilter(NormalText.texture, TEXTURE_FILTER_POINT);
+    if (musicState == 1) {
+      UpdateMusicStream(currentMusic);
+    }
+    mousePoint = GetMousePosition();
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
     Vector2 HeadingPosition = {
@@ -117,9 +134,8 @@ int main(void) {
 
     DrawTextEx(Heading1, headerText, HeadingPosition, Heading1Size, 0,
                textColor); // DrawText(text, xpos, 200, 20, textColor);
-    DrawTextEx(NormalText, normalText, TextPosition, mainSize, 0,
-               textColor); // DrawText(text, xpos, 200, 20, textColor);
-		drawFileList(&fileList, &NormalText, mainSize, &textColor);
+    drawFileList(&fileList, &NormalText, mainSize, &textColor, &mousePoint,
+                 &currentMusic, &musicState);
 
     EndDrawing();
     //----------------------------------------------------------------------------------
@@ -128,6 +144,8 @@ int main(void) {
   // De-Initialization
   UnloadFont(Heading1);
   UnloadFont(NormalText);
+  UnloadMusicStream(currentMusic);
+  CloseAudioDevice();
   UnloadDirectoryFiles(fileList);
   //--------------------------------------------------------------------------------------
   CloseWindow(); // Close window and OpenGL context
