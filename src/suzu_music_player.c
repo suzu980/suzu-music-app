@@ -4,14 +4,14 @@
 
 void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
                   Color *textColor, Vector2 *mousePos, Music *currentMusic,
-                  int *musicState);
+                  int *musicState, int *musicScrollValue);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
 void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
                   Color *textColor, Vector2 *mousePos, Music *currentMusic,
-                  int *musicState) {
+                  int *musicState, int *musicScrollValue) {
   int initialx = 500;
   int initialy = 150;
   int lineSpacing = 25;
@@ -34,10 +34,11 @@ void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
                       GetFileNameWithoutExt(pFileList->paths[idx]), fontSize, 0)
                 .y /
             2 +
-        boxSpacing * idx;
+        boxSpacing * idx + *musicScrollValue;
 
     buttonBounds[idx].x = initialx;
-    buttonBounds[idx].y = initialy + boxHeight * idx + boxSpacing * idx;
+    buttonBounds[idx].y =
+        initialy + boxHeight * idx + boxSpacing * idx + *musicScrollValue;
     buttonBounds[idx].width = boxWidth;
     buttonBounds[idx].height = boxHeight;
     Color colorToUse = GRAY;
@@ -47,15 +48,17 @@ void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
         buttonAction = true;
       }
     }
-    DrawRectangle(initialx, initialy + boxHeight * idx + boxSpacing * idx,
+    DrawRectangle(initialx,
+                  initialy + boxHeight * idx + boxSpacing * idx +
+                      *musicScrollValue,
                   boxWidth, boxHeight, colorToUse);
     DrawTextEx(*pNormalText, GetFileNameWithoutExt(pFileList->paths[idx]),
                positions[idx], fontSize, 0, *textColor);
     if (buttonAction) {
-			if (*musicState != 0){
-				TraceLog(LOG_INFO,"Music Unloaded");
-				UnloadMusicStream(*currentMusic);
-			}
+      if (*musicState != 0) {
+        TraceLog(LOG_INFO, "Music Unloaded");
+        UnloadMusicStream(*currentMusic);
+      }
       *currentMusic = LoadMusicStream(pFileList->paths[idx]);
       PlayMusicStream(*currentMusic);
       *musicState = 1;
@@ -67,6 +70,8 @@ int main(void) {
   //--------------------------------------------------------------------------------------
   int screenWidth = 1280;
   int screenHeight = 720;
+  int musicScrollValue = 0;
+
   const int lineBreakSpacing = 25;
   const int titleOffset = 250;
 
@@ -116,6 +121,12 @@ int main(void) {
       UpdateMusicStream(currentMusic);
     }
     mousePoint = GetMousePosition();
+    int mouseTranslation = GetMouseWheelMove() * 16;
+    if ((musicScrollValue + mouseTranslation) != 0) {
+
+      musicScrollValue += mouseTranslation; 
+    }
+
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
     Vector2 HeadingPosition = {
@@ -135,7 +146,7 @@ int main(void) {
     DrawTextEx(Heading1, headerText, HeadingPosition, Heading1Size, 0,
                textColor); // DrawText(text, xpos, 200, 20, textColor);
     drawFileList(&fileList, &NormalText, mainSize, &textColor, &mousePoint,
-                 &currentMusic, &musicState);
+                 &currentMusic, &musicState, &musicScrollValue);
 
     EndDrawing();
     //----------------------------------------------------------------------------------
