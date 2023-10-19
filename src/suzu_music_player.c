@@ -16,7 +16,7 @@ void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
   int initialy = 150;
   int lineSpacing = 25;
   int boxWidth = 500;
-  int boxHeight = 30;
+  int boxHeight = 50;
   int pl = 10;
   int boxSpacing = 5;
 
@@ -82,7 +82,7 @@ int main(void) {
   InitWindow(screenWidth, screenHeight, "Music Player and Metadata Editor");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(32768);
-  Music currentMusic; //=
+  Music currentMusic;
   int musicState = 0; // 0: None, 1:Playing, 2: Paused
   // Getting filelists
   FilePathList fileList =
@@ -124,7 +124,7 @@ int main(void) {
     int mouseTranslation = GetMouseWheelMove() * 16;
     if ((musicScrollValue + mouseTranslation) != 0) {
 
-      musicScrollValue += mouseTranslation; 
+      musicScrollValue += mouseTranslation;
     }
 
     screenWidth = GetScreenWidth();
@@ -144,7 +144,7 @@ int main(void) {
     ClearBackground(baseColor);
 
     DrawTextEx(Heading1, headerText, HeadingPosition, Heading1Size, 0,
-               textColor); // DrawText(text, xpos, 200, 20, textColor);
+               textColor);
     drawFileList(&fileList, &NormalText, mainSize, &textColor, &mousePoint,
                  &currentMusic, &musicState, &musicScrollValue);
 
@@ -155,7 +155,8 @@ int main(void) {
   // De-Initialization
   UnloadFont(Heading1);
   UnloadFont(NormalText);
-  UnloadMusicStream(currentMusic);
+  if (musicState != 0)
+    UnloadMusicStream(currentMusic);
   CloseAudioDevice();
   UnloadDirectoryFiles(fileList);
   //--------------------------------------------------------------------------------------
