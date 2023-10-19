@@ -1,3 +1,6 @@
 /src/builds
 /src/builds-debug
 /src/raylib
+/src/resources/sample-music/*.mp3
+/src/resources/sample-music/*.flac
+/src/resources/sample-music/*.m4a
