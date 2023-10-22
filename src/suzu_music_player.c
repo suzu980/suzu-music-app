@@ -1,6 +1,10 @@
 #include "raylib.h"
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
+
+#define ARRAY_LEN(xs) sizeof(xs) / sizeof(xs[0])
 
 void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
                   Color *textColor, Vector2 *mousePos, Music *currentMusic,
@@ -65,6 +69,35 @@ void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
     }
   }
 }
+
+typedef struct { 
+	float left;
+	float right;
+} Frame;
+
+Frame global_frame_buffer[4800] = {0}; // frame buffer TODO set for other sample rates too
+size_t global_frames_count = 0; 
+
+void callback(void *bufferData, unsigned int frames) {
+  size_t buffer_capacity = ARRAY_LEN(global_frame_buffer);
+  if (frames <= buffer_capacity - global_frames_count) { // if still have space in buffer in frames
+    memcpy(global_frame_buffer + global_frames_count, bufferData, sizeof(Frame) * frames);
+    global_frames_count += frames;
+  } else if (frames <= buffer_capacity) { // if no space in buffer
+    memmove(global_frame_buffer, global_frame_buffer + (frames - buffer_capacity + global_frames_count),sizeof(Frame) * (global_frames_count - frames + buffer_capacity - global_frames_count));
+		global_frames_count = global_frames_count - frames + buffer_capacity - global_frames_count;
+    memcpy(global_frame_buffer +  global_frames_count, bufferData, sizeof(Frame) * frames);
+    global_frames_count = buffer_capacity;
+
+  } else { // Welp if frame > capacity then idk just copy everything
+    printf("Welp, buffer full lol");
+    memcpy(global_frame_buffer, bufferData, sizeof(Frame)*buffer_capacity);
+    global_frames_count = buffer_capacity;
+  }
+  if (frames > ARRAY_LEN(global_frame_buffer)) {
+    frames = ARRAY_LEN(global_frame_buffer);
+  }
+}
 int main(void) {
   // Initialization
   //--------------------------------------------------------------------------------------
@@ -75,15 +108,24 @@ int main(void) {
   const int lineBreakSpacing = 25;
   const int titleOffset = 250;
 
-  Color baseColor = (Color){239, 241, 245, 255};
+  Color baseColor = (Color){30, 30, 46, 255};
   Color textColor = (Color){76, 79, 105, 255};
 
+  Color posColor= (Color){137, 180, 250, 255};
+  Color negColor= (Color){243, 139, 168, 255};
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(screenWidth, screenHeight, "Music Player and Metadata Editor");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(32768);
-  Music currentMusic;
-  int musicState = 0; // 0: None, 1:Playing, 2: Paused
+  Music currentMusic =
+      LoadMusicStream("resources/sample-music/Feel_Vocal_LB_M.flac");
+  // Music currentMusic =
+   //    LoadMusicStream("resources/sample-music/nights.mp3");
+  AttachAudioStreamProcessor(currentMusic.stream, callback);
+  unsigned int sampleRate = currentMusic.stream.sampleRate;
+  SetMusicVolume(currentMusic, 0.2);
+  PlayMusicStream(currentMusic);
+  int musicState = 1; // 0: None, 1:Playing, 2: Paused
   // Getting filelists
   FilePathList fileList =
       LoadDirectoryFilesEx("resources/sample-music", ".flac;.mp3;.m4a", true);
@@ -113,40 +155,59 @@ int main(void) {
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
+    UpdateMusicStream(currentMusic);
     // Update
     //----------------------------------------------------------------------------------
     // TODO: Update your variables here
     //----------------------------------------------------------------------------------
-    if (musicState == 1) {
-      UpdateMusicStream(currentMusic);
-    }
-    mousePoint = GetMousePosition();
-    int mouseTranslation = GetMouseWheelMove() * 16;
-    if ((musicScrollValue + mouseTranslation) != 0) {
-
-      musicScrollValue += mouseTranslation;
-    }
-
-    screenWidth = GetScreenWidth();
-    screenHeight = GetScreenHeight();
-    Vector2 HeadingPosition = {
-        screenWidth / 2 - HeadingVec2.x / 2,
-        screenHeight / 2 - HeadingVec2.y / 2 - lineBreakSpacing -
-            titleOffset}; // TODO CHANGE THE WAY TEXT IS CENTERED
-    Vector2 TextPosition = {
-        screenWidth / 2 - NormalTextVec2.x / 2,
-        screenHeight / 2 - NormalTextVec2.y / 2 + lineBreakSpacing -
-            titleOffset}; // TODO CHANGE THE WAY TEXT IS CENTERED
+    //    if (musicState == 1) {
+    //      UpdateMusicStream(currentMusic);
+    //    }
+    //    mousePoint = GetMousePosition();
+    //    int mouseTranslation = GetMouseWheelMove() * 16;
+    //    if ((musicScrollValue + mouseTranslation) != 0) {
+    //
+    //      musicScrollValue += mouseTranslation;
+    //    }
+    //
+    //    screenWidth = GetScreenWidth();
+    //    screenHeight = GetScreenHeight();
+    //    Vector2 HeadingPosition = {
+    //        screenWidth / 2 - HeadingVec2.x / 2,
+    //        screenHeight / 2 - HeadingVec2.y / 2 - lineBreakSpacing -
+    //            titleOffset}; // TODO CHANGE THE WAY TEXT IS CENTERED
+    //    Vector2 TextPosition = {
+    //        screenWidth / 2 - NormalTextVec2.x / 2,
+    //        screenHeight / 2 - NormalTextVec2.y / 2 + lineBreakSpacing -
+    //            titleOffset}; // TODO CHANGE THE WAY TEXT IS CENTERED
     // Draw
     //----------------------------------------------------------------------------------
+
     BeginDrawing();
 
     ClearBackground(baseColor);
+    int w = GetRenderWidth();
+    int h = GetRenderHeight();
+	//	int bar = 200;
+  //      DrawRectangle(1, h / 2 , 200, bar, textColor); //NEGATIVE
+  //      DrawRectangle(1, h / 2 - 200, 200, bar, RED); //POSITIVE
+    for (size_t i = 0; i < global_frames_count; ++i) {
+			float l = global_frame_buffer[i].left;
+			float r = global_frame_buffer[i].right;
+      float t = (l + r)/2;
 
-    DrawTextEx(Heading1, headerText, HeadingPosition, Heading1Size, 0,
-               textColor);
-    drawFileList(&fileList, &NormalText, mainSize, &textColor, &mousePoint,
-                 &currentMusic, &musicState, &musicScrollValue);
+      if (t > 0) {
+       DrawRectangle(i*((float)w/global_frames_count), h / 2 - h / 2 * t +1, 1, h / 2 * t, posColor);
+      } else {
+       DrawRectangle(i*((float)w/global_frames_count), h / 2 -1, 1, -(h / 2 * t), negColor);
+      }
+    }
+
+    //    DrawTextEx(Heading1, headerText, HeadingPosition, Heading1Size, 0,
+    //               textColor);
+    //    drawFileList(&fileList, &NormalText, mainSize, &textColor,
+    //    &mousePoint,
+    //                 &currentMusic, &musicState, &musicScrollValue);
 
     EndDrawing();
     //----------------------------------------------------------------------------------
@@ -157,6 +218,7 @@ int main(void) {
   UnloadFont(NormalText);
   if (musicState != 0)
     UnloadMusicStream(currentMusic);
+  DetachAudioStreamProcessor(currentMusic.stream, callback);
   CloseAudioDevice();
   UnloadDirectoryFiles(fileList);
   //--------------------------------------------------------------------------------------
