@@ -7,69 +7,69 @@
 
 #define ARRAY_LEN(xs) sizeof(xs) / sizeof(xs[0])
 
-void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
-                  Color *textColor, Vector2 *mousePos, Music *currentMusic,
-                  int *musicState, int *musicScrollValue);
+//void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
+//                  Color *textColor, Vector2 *mousePos, Music *currentMusic,
+//                  int *musicState, int *musicScrollValue);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
-                  Color *textColor, Vector2 *mousePos, Music *currentMusic,
-                  int *musicState, int *musicScrollValue) {
-  int initialx = 500;
-  int initialy = 150;
-  int lineSpacing = 25;
-  int boxWidth = 500;
-  int boxHeight = 50;
-  int pl = 10;
-  int boxSpacing = 5;
-
-  int size = pFileList->count;
-  Vector2 positions[size];
-  Rectangle buttonBounds[size];
-  Vector2 textSize[size];
-  // TODO : DO NOT RENDER WHEN OFF SCREEN
-  for (int idx = 0; idx < size; ++idx) {
-    bool buttonAction = false;
-    positions[idx].x = initialx + pl;
-    positions[idx].y =
-        boxHeight * idx + initialy + (float)boxHeight / 2 -
-        MeasureTextEx(*pNormalText,
-                      GetFileNameWithoutExt(pFileList->paths[idx]), fontSize, 0)
-                .y /
-            2 +
-        boxSpacing * idx + *musicScrollValue;
-
-    buttonBounds[idx].x = initialx;
-    buttonBounds[idx].y =
-        initialy + boxHeight * idx + boxSpacing * idx + *musicScrollValue;
-    buttonBounds[idx].width = boxWidth;
-    buttonBounds[idx].height = boxHeight;
-    Color colorToUse = GRAY;
-    if (CheckCollisionPointRec(*mousePos, buttonBounds[idx])) {
-      colorToUse = WHITE;
-      if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-        buttonAction = true;
-      }
-    }
-    DrawRectangle(initialx,
-                  initialy + boxHeight * idx + boxSpacing * idx +
-                      *musicScrollValue,
-                  boxWidth, boxHeight, colorToUse);
-    DrawTextEx(*pNormalText, GetFileNameWithoutExt(pFileList->paths[idx]),
-               positions[idx], fontSize, 0, *textColor);
-    if (buttonAction) {
-      if (*musicState != 0) {
-        TraceLog(LOG_INFO, "Music Unloaded");
-        UnloadMusicStream(*currentMusic);
-      }
-      *currentMusic = LoadMusicStream(pFileList->paths[idx]);
-      PlayMusicStream(*currentMusic);
-      *musicState = 1;
-    }
-  }
-}
+//void drawFileList(FilePathList *pFileList, Font *pNormalText, int fontSize,
+//                  Color *textColor, Vector2 *mousePos, Music *currentMusic,
+//                  int *musicState, int *musicScrollValue) {
+//  int initialx = 500;
+//  int initialy = 150;
+//  int lineSpacing = 25;
+//  int boxWidth = 500;
+//  int boxHeight = 50;
+//  int pl = 10;
+//  int boxSpacing = 5;
+//
+//  int size = pFileList->count;
+//  Vector2 positions[size];
+//  Rectangle buttonBounds[size];
+//  Vector2 textSize[size];
+//  // TODO : DO NOT RENDER WHEN OFF SCREEN
+//  for (int idx = 0; idx < size; ++idx) {
+//    bool buttonAction = false;
+//    positions[idx].x = initialx + pl;
+//    positions[idx].y =
+//        boxHeight * idx + initialy + (float)boxHeight / 2 -
+//        MeasureTextEx(*pNormalText,
+//                      GetFileNameWithoutExt(pFileList->paths[idx]), fontSize, 0)
+//                .y /
+//            2 +
+//        boxSpacing * idx + *musicScrollValue;
+//
+//    buttonBounds[idx].x = initialx;
+//    buttonBounds[idx].y =
+//        initialy + boxHeight * idx + boxSpacing * idx + *musicScrollValue;
+//    buttonBounds[idx].width = boxWidth;
+//    buttonBounds[idx].height = boxHeight;
+//    Color colorToUse = GRAY;
+//    if (CheckCollisionPointRec(*mousePos, buttonBounds[idx])) {
+//      colorToUse = WHITE;
+//      if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+//        buttonAction = true;
+//      }
+//    }
+//    DrawRectangle(initialx,
+//                  initialy + boxHeight * idx + boxSpacing * idx +
+//                      *musicScrollValue,
+//                  boxWidth, boxHeight, colorToUse);
+//    DrawTextEx(*pNormalText, GetFileNameWithoutExt(pFileList->paths[idx]),
+//               positions[idx], fontSize, 0, *textColor);
+//    if (buttonAction) {
+//      if (*musicState != 0) {
+//        TraceLog(LOG_INFO, "Music Unloaded");
+//        UnloadMusicStream(*currentMusic);
+//      }
+//      *currentMusic = LoadMusicStream(pFileList->paths[idx]);
+//      PlayMusicStream(*currentMusic);
+//      *musicState = 1;
+//    }
+//  }
+//}
 
 typedef struct {
   float left;
@@ -113,10 +113,10 @@ int main(void) {
   //--------------------------------------------------------------------------------------
   int screenWidth = 1280;
   int screenHeight = 720;
-  int musicScrollValue = 0;
+//  int musicScrollValue = 0;
 
   const int lineBreakSpacing = 20;
-  const int titleOffset = 250;
+  //const int titleOffset = 250;
 
   Color baseColor = (Color){30, 30, 46, 255};
   Color textColor = (Color){166, 173, 200, 255};
@@ -157,7 +157,7 @@ int main(void) {
 
   SetTextureFilter(Heading1.texture, TEXTURE_FILTER_POINT);
   SetTextureFilter(NormalText.texture, TEXTURE_FILTER_POINT);
-  Vector2 mousePoint = {0.0f, 0.0f};
+//  Vector2 mousePoint = {0.0f, 0.0f};
 
   size_t sample_rate;
   int buff_size;
