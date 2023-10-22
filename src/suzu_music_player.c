@@ -75,7 +75,7 @@ typedef struct {
 	float right;
 } Frame;
 
-Frame global_frame_buffer[4800] = {0}; // frame buffer TODO set for other sample rates too
+Frame global_frame_buffer[24000] = {0}; // frame buffer TODO set for other sample rates too
 size_t global_frames_count = 0; 
 
 void callback(void *bufferData, unsigned int frames) {
@@ -89,8 +89,7 @@ void callback(void *bufferData, unsigned int frames) {
     memcpy(global_frame_buffer +  global_frames_count, bufferData, sizeof(Frame) * frames);
     global_frames_count = buffer_capacity;
 
-  } else { // Welp if frame > capacity then idk just copy everything
-    printf("Welp, buffer full lol");
+  } else { 
     memcpy(global_frame_buffer, bufferData, sizeof(Frame)*buffer_capacity);
     global_frames_count = buffer_capacity;
   }
@@ -114,7 +113,7 @@ int main(void) {
   Color posColor= (Color){137, 180, 250, 255};
   Color negColor= (Color){243, 139, 168, 255};
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  InitWindow(screenWidth, screenHeight, "Music Player and Metadata Editor");
+  InitWindow(screenWidth, screenHeight, "Music Visualizer");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(32768);
   Music currentMusic =
@@ -123,7 +122,7 @@ int main(void) {
    //    LoadMusicStream("resources/sample-music/nights.mp3");
   AttachAudioStreamProcessor(currentMusic.stream, callback);
   unsigned int sampleRate = currentMusic.stream.sampleRate;
-  SetMusicVolume(currentMusic, 0.2);
+  SetMusicVolume(currentMusic, 0.5);
   PlayMusicStream(currentMusic);
   int musicState = 1; // 0: None, 1:Playing, 2: Paused
   // Getting filelists
