@@ -76,12 +76,12 @@ typedef struct {
 	float right;
 } Frame;
 
-Frame *GLOBAL_THING;
-Frame global_frame_buffer[882] = {0}; // frame buffer TODO set for other sample rates too
+int *global_buffer_size;
+Frame *global_frame_buffer; 
 size_t global_frames_count = 0; 
 
 void callback(void *bufferData, unsigned int frames) {
-  size_t buffer_capacity = ARRAY_LEN(global_frame_buffer);
+  size_t buffer_capacity = *global_buffer_size;
   if (frames <= buffer_capacity - global_frames_count) { // if still have space in buffer in frames
     memcpy(global_frame_buffer + global_frames_count, bufferData, sizeof(Frame) * frames);
     global_frames_count += frames;
@@ -96,11 +96,9 @@ void callback(void *bufferData, unsigned int frames) {
     memcpy(global_frame_buffer, bufferData, sizeof(Frame)*buffer_capacity);
     global_frames_count = buffer_capacity;
   }
-  if (frames > ARRAY_LEN(global_frame_buffer)) {
-    frames = ARRAY_LEN(global_frame_buffer);
-  }
 }
 int main(void) {
+
   // Initialization
   //--------------------------------------------------------------------------------------
   int screenWidth = 1280;
@@ -122,15 +120,21 @@ int main(void) {
   SetAudioStreamBufferSizeDefault(32768);
   Music currentMusic =
       LoadMusicStream("resources/sample-music/Feel_Vocal_LB_M.flac");
+  //Music currentMusic =
+  //    LoadMusicStream("resources/sample-music/nights.mp3");
 	size_t sample_rate = currentMusic.stream.sampleRate;
-	GLOBAL_THING = malloc(sample_rate * sizeof(*GLOBAL_THING));
-	printf("%f\n", GLOBAL_THING->left);
-
-  // Music currentMusic =
-   //    LoadMusicStream("resources/sample-music/nights.mp3");
+	int buff_size = sample_rate / 100 * (1.0 / 60.0 * 100.0);// Capture per frame of data 
+	global_buffer_size = &buff_size;
+	global_frame_buffer = malloc(*global_buffer_size * sizeof(global_frame_buffer));
+	for (int i = 0; i < 15; i++){
+		global_frame_buffer[i].left = 0.0;
+		global_frame_buffer[i].right = 0.0;
+	}
+	printf("Scan buffer size: %d\n", *global_buffer_size);
+	float currentVolume = 0.5;
   AttachAudioStreamProcessor(currentMusic.stream, callback);
   unsigned int sampleRate = currentMusic.stream.sampleRate;
-  SetMusicVolume(currentMusic, 0.5);
+  SetMusicVolume(currentMusic, currentVolume);
   PlayMusicStream(currentMusic);
   int musicState = 1; // 0: None, 1:Playing, 2: Paused
   // Getting filelists
@@ -162,19 +166,34 @@ int main(void) {
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
+		if(IsFileDropped()){
+			FilePathList droppedFiles = LoadDroppedFiles();
+			printf("Dropped File: %s\n", droppedFiles.paths[0]);
+			UnloadDroppedFiles(droppedFiles);
+		}
 			UpdateMusicStream(currentMusic);
 		if (IsKeyReleased(KEY_SPACE)){
-			printf("key released\n");
 			if (musicState == 2){
-			printf("audio resume\n");
+			printf("RESUMED\n");
 				ResumeMusicStream(currentMusic);
 				musicState = 1;
 			}
 			else if (musicState == 1){
-			printf("audio pause\n");
+			printf("PAUSED\n");
 			PauseMusicStream(currentMusic);
 			musicState = 2;
 			}
+		}
+		if(GetMouseWheelMove() != 0){
+			currentVolume += GetMouseWheelMove() * 0.05;
+			if(currentVolume < 0){
+				currentVolume = 0;
+			}
+			if(currentVolume > 1){
+				currentVolume = 1;
+			}
+			printf("Current volume %f:\n", currentVolume);
+			SetMusicVolume(currentMusic, currentVolume);
 		}
 		
     // Update
@@ -212,17 +231,18 @@ int main(void) {
 	//	int bar = 200;
   //      DrawRectangle(1, h / 2 , 200, bar, textColor); //NEGATIVE
   //      DrawRectangle(1, h / 2 - 200, 200, bar, RED); //POSITIVE
-		int stride = 1;
+		int stride = 2;
+		int cell_width = 1;
     for (size_t i = 0; i < global_frames_count; i += stride) {
 			float l = global_frame_buffer[i].left;
 			float r = global_frame_buffer[i].right;
       float t = (l + r)/2;
-			int cell_width = 1;
+			float scale = 0.8;
 
       if (t > 0) {
-       DrawRectangle(i*((float)w/global_frames_count), h / 2 - h / 2 * t +1, 1*cell_width, h / 2 * t, posColor);
+       DrawRectangle(i*((float)w/global_frames_count), h / 2 - h / 2 * t*currentVolume*scale+1, 1*cell_width, h / 2 * t*currentVolume*scale, posColor);
       } else {
-       DrawRectangle(i*((float)w/global_frames_count), h / 2 -1, 1*cell_width, -(h / 2 * t), negColor);
+       DrawRectangle(i*((float)w/global_frames_count), h / 2 -1, 1*cell_width, -(h / 2 * t*currentVolume*scale), negColor);
       }
     }
 
@@ -237,7 +257,7 @@ int main(void) {
   }
 
   // De-Initialization
-	free(GLOBAL_THING);
+	free(global_frame_buffer);
   UnloadFont(Heading1);
   UnloadFont(NormalText);
   if (musicState != 0)
