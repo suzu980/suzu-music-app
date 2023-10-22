@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <time.h>
 
 #define ARRAY_LEN(xs) sizeof(xs) / sizeof(xs[0])
@@ -75,7 +76,8 @@ typedef struct {
 	float right;
 } Frame;
 
-Frame global_frame_buffer[24000] = {0}; // frame buffer TODO set for other sample rates too
+Frame *GLOBAL_THING;
+Frame global_frame_buffer[882] = {0}; // frame buffer TODO set for other sample rates too
 size_t global_frames_count = 0; 
 
 void callback(void *bufferData, unsigned int frames) {
@@ -90,6 +92,7 @@ void callback(void *bufferData, unsigned int frames) {
     global_frames_count = buffer_capacity;
 
   } else { 
+		printf("WARNING:Buffer overload\n");
     memcpy(global_frame_buffer, bufferData, sizeof(Frame)*buffer_capacity);
     global_frames_count = buffer_capacity;
   }
@@ -103,6 +106,7 @@ int main(void) {
   int screenWidth = 1280;
   int screenHeight = 720;
   int musicScrollValue = 0;
+
 
   const int lineBreakSpacing = 25;
   const int titleOffset = 250;
@@ -118,6 +122,10 @@ int main(void) {
   SetAudioStreamBufferSizeDefault(32768);
   Music currentMusic =
       LoadMusicStream("resources/sample-music/Feel_Vocal_LB_M.flac");
+	size_t sample_rate = currentMusic.stream.sampleRate;
+	GLOBAL_THING = malloc(sample_rate * sizeof(*GLOBAL_THING));
+	printf("%f\n", GLOBAL_THING->left);
+
   // Music currentMusic =
    //    LoadMusicStream("resources/sample-music/nights.mp3");
   AttachAudioStreamProcessor(currentMusic.stream, callback);
@@ -154,7 +162,21 @@ int main(void) {
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
-    UpdateMusicStream(currentMusic);
+			UpdateMusicStream(currentMusic);
+		if (IsKeyReleased(KEY_SPACE)){
+			printf("key released\n");
+			if (musicState == 2){
+			printf("audio resume\n");
+				ResumeMusicStream(currentMusic);
+				musicState = 1;
+			}
+			else if (musicState == 1){
+			printf("audio pause\n");
+			PauseMusicStream(currentMusic);
+			musicState = 2;
+			}
+		}
+		
     // Update
     //----------------------------------------------------------------------------------
     // TODO: Update your variables here
@@ -190,15 +212,17 @@ int main(void) {
 	//	int bar = 200;
   //      DrawRectangle(1, h / 2 , 200, bar, textColor); //NEGATIVE
   //      DrawRectangle(1, h / 2 - 200, 200, bar, RED); //POSITIVE
-    for (size_t i = 0; i < global_frames_count; ++i) {
+		int stride = 1;
+    for (size_t i = 0; i < global_frames_count; i += stride) {
 			float l = global_frame_buffer[i].left;
 			float r = global_frame_buffer[i].right;
       float t = (l + r)/2;
+			int cell_width = 1;
 
       if (t > 0) {
-       DrawRectangle(i*((float)w/global_frames_count), h / 2 - h / 2 * t +1, 1, h / 2 * t, posColor);
+       DrawRectangle(i*((float)w/global_frames_count), h / 2 - h / 2 * t +1, 1*cell_width, h / 2 * t, posColor);
       } else {
-       DrawRectangle(i*((float)w/global_frames_count), h / 2 -1, 1, -(h / 2 * t), negColor);
+       DrawRectangle(i*((float)w/global_frames_count), h / 2 -1, 1*cell_width, -(h / 2 * t), negColor);
       }
     }
 
@@ -213,6 +237,7 @@ int main(void) {
   }
 
   // De-Initialization
+	free(GLOBAL_THING);
   UnloadFont(Heading1);
   UnloadFont(NormalText);
   if (musicState != 0)
