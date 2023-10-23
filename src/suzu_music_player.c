@@ -68,7 +68,8 @@ int main(void) {
   pi = atan2f(1, 1) * 4;
   float x = pi / 180;
   bool trackLoaded = false;
-	SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
+  bool wireframe = false;
+  SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
   InitWindow(INITIALSCREEN_WIDTH, INITIALSCREEN_HEIGHT, "Music Visualizer");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(65536);
@@ -130,6 +131,9 @@ int main(void) {
       if (IsKeyReleased(KEY_R)) {
         StopMusicStream(currentMusic);
         PlayMusicStream(currentMusic);
+      }
+      if (IsKeyReleased(KEY_G)) {
+        wireframe = !wireframe;
       }
       if (GetMouseWheelMove() != 0) {
         currentVolume += GetMouseWheelMove() * 0.05;
@@ -211,24 +215,44 @@ int main(void) {
 
     ClearBackground(MOCHABASE);
 
-    size_t stride = 1;
-    int cell_width = 2;
+    size_t stride = (!wireframe) ? 32 : 1;
+    int cell_width = 1;
     if (trackLoaded) {
-      for (size_t i = 0; i < global_frames_count; i += stride) {
+      for (size_t i = 0;
+           i < global_frames_count && (i + stride) < global_frames_count;
+           i += stride) {
         float l = global_frame_buffer[i].left;
+        float l2 = global_frame_buffer[i + stride].left;
         float r = global_frame_buffer[i].right;
+        float r2 = global_frame_buffer[i + stride].right;
         float t = (l + r) * 0.5;
-        float scale = 0.8;
+        float t2 = (l2 + r2) * 0.5;
+        float scale = 1.0;
 
         if (t > 0) {
-          DrawRectangle(i * ((float)w / global_frames_count),
-                        h * 0.5 - h * 0.5 * t * currentVolume * scale + 1,
-                        1 * cell_width, h * 0.5 * t * currentVolume * scale,
-                        MOCHABLUE);
+          (!wireframe)
+              ? DrawRectangle(i * ((float)w / global_frames_count),
+                              h * 0.5 - h * 0.5 * t * currentVolume * scale + 1,
+                              1 * cell_width,
+                              h * 0.5 * t * currentVolume * scale, MOCHABLUE)
+						//TODO Clean up calculations
+              : DrawLine(i * ((float)w / global_frames_count),
+                         h * 0.5 - h * 0.5 * t * currentVolume * scale,
+                         (i + stride) * ((float)w / global_frames_count),
+                         h * 0.5 - h * 0.5 * t2 * currentVolume * scale,
+                         MOCHABLUE);
+
         } else {
-          DrawRectangle(i * ((float)w / global_frames_count), h / 2 - 1,
-                        1 * cell_width, -(h * 0.5 * t * currentVolume * scale),
-                        MOCHARED);
+          (!wireframe)
+              ? DrawRectangle(i * ((float)w / global_frames_count), h / 2 - 1,
+                              1 * cell_width,
+                              -(h * 0.5 * t * currentVolume * scale), MOCHARED)
+						//TODO Clean up calculations
+              : DrawLine(i * ((float)w / global_frames_count),
+                         h * 0.5 - (h * 0.5 * t * currentVolume * scale),
+                         (i + stride) * ((float)w / global_frames_count),
+                         h * 0.5 - (h * 0.5 * t2 * currentVolume * scale),
+                         MOCHARED);
         }
       }
 
