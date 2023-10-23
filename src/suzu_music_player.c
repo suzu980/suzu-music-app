@@ -48,10 +48,8 @@ void callback(void *bufferData, unsigned int frames) {
     memmove(global_frame_buffer,
             global_frame_buffer +
                 (frames - buffer_capacity + global_frames_count),
-            sizeof(Frame) * (global_frames_count - frames + buffer_capacity -
-                             global_frames_count));
-    global_frames_count =
-        global_frames_count - frames + buffer_capacity - global_frames_count;
+            sizeof(Frame) * (buffer_capacity - frames));
+    global_frames_count = buffer_capacity - frames;
     memcpy(global_frame_buffer + global_frames_count, bufferData,
            sizeof(Frame) * frames);
     global_frames_count = buffer_capacity;
@@ -67,10 +65,10 @@ int main(void) {
 
   // Initialization
   //--------------------------------------------------------------------------------------
-	pi = atan2f(1, 1) * 4;
-	float x = pi / 180; 
+  pi = atan2f(1, 1) * 4;
+  float x = pi / 180;
   bool trackLoaded = false;
-  // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+	SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
   InitWindow(INITIALSCREEN_WIDTH, INITIALSCREEN_HEIGHT, "Music Visualizer");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(65536);
@@ -213,8 +211,8 @@ int main(void) {
 
     ClearBackground(MOCHABASE);
 
-    size_t stride = 8;
-    int cell_width = 1;
+    size_t stride = 1;
+    int cell_width = 2;
     if (trackLoaded) {
       for (size_t i = 0; i < global_frames_count; i += stride) {
         float l = global_frame_buffer[i].left;
