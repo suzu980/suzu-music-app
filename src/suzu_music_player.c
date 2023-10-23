@@ -154,8 +154,10 @@ int main(void) {
         if (trackLoaded) {
           StopMusicStream(currentMusic);
           DetachAudioStreamProcessor(currentMusic.stream, callback);
+					UnloadMusicStream(currentMusic);
           free(global_frame_buffer);
           free(currentFileName);
+					global_frames_count = 0;
         }
         currentMusic = LoadMusicStream(droppedFiles.paths[0]);
         UnloadMusicStream(tempMusic);
@@ -202,7 +204,7 @@ int main(void) {
     pTextPosition->y = h * 0.5 - NormalTextVec2.y + 25;
 
     pcurrentFileTextPosition->x = w * 0.5 - currentFileTextVec2.x;
-    pcurrentFileTextPosition->y = h * 0.5 - currentFileTextVec2.y + h * 0.25;
+    pcurrentFileTextPosition->y = h * 0.5 - currentFileTextVec2.y + h * 0.35;
     // TEXT IS CENTERED Draw
     //----------------------------------------------------------------------------------
     float seek_ratio = 0;
@@ -232,26 +234,23 @@ int main(void) {
         if (t > 0) {
           (!wireframe)
               ? DrawRectangle(i * ((float)w / global_frames_count),
-                              h * 0.5 - h * 0.5 * t * currentVolume * scale + 1,
+                              h * 0.5 - h * 0.5 * t  * scale + 1,
                               1 * cell_width,
-                              h * 0.5 * t * currentVolume * scale, MOCHABLUE)
-						//TODO Clean up calculations
+                              h * 0.5 * t * scale, MOCHABLUE)
               : DrawLine(i * ((float)w / global_frames_count),
-                         h * 0.5 - h * 0.5 * t * currentVolume * scale,
+                         h * 0.5 - h * 0.5 * t * scale,
                          (i + stride) * ((float)w / global_frames_count),
-                         h * 0.5 - h * 0.5 * t2 * currentVolume * scale,
+                         h * 0.5 - h * 0.5 * t2 * scale,
                          MOCHABLUE);
-
         } else {
           (!wireframe)
-              ? DrawRectangle(i * ((float)w / global_frames_count), h / 2 - 1,
+              ? DrawRectangle(i * ((float)w / global_frames_count), h * 0.5 - 1,
                               1 * cell_width,
-                              -(h * 0.5 * t * currentVolume * scale), MOCHARED)
-						//TODO Clean up calculations
+                              -(h * 0.5 * t *  scale), MOCHARED)
               : DrawLine(i * ((float)w / global_frames_count),
-                         h * 0.5 - (h * 0.5 * t * currentVolume * scale),
+                         h * 0.5 - (h * 0.5 * t * scale),
                          (i + stride) * ((float)w / global_frames_count),
-                         h * 0.5 - (h * 0.5 * t2 * currentVolume * scale),
+                         h * 0.5 - (h * 0.5 * t2 * scale),
                          MOCHARED);
         }
       }
