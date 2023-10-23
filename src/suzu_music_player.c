@@ -30,12 +30,12 @@ typedef struct {
   float right;
 } Frame;
 
-size_t *global_buffer_size;
+size_t global_buffer_size;
 Frame *global_frame_buffer;
 size_t global_frames_count = 0;
 
 void callback(void *bufferData, unsigned int frames) {
-  size_t buffer_capacity = *global_buffer_size;
+  size_t buffer_capacity = global_buffer_size;
   if (frames <=
       buffer_capacity -
           global_frames_count) { // if still have space in buffer in frames
@@ -68,7 +68,7 @@ int main(void) {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(INITIALSCREEN_WIDTH, INITIALSCREEN_HEIGHT, "Music Visualizer");
   InitAudioDevice();
-  SetAudioStreamBufferSizeDefault(32768);
+  SetAudioStreamBufferSizeDefault(65536);
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
   Music currentMusic;
   float currentVolume = 0.75;
@@ -101,8 +101,15 @@ int main(void) {
   SetTextureFilter(HeadingFont.texture, TEXTURE_FILTER_POINT);
   SetTextureFilter(NormalTextFont.texture, TEXTURE_FILTER_POINT);
 
-  size_t sample_rate;
+  float sample_rate;
   size_t buff_size;
+	Vector2 HeadingPosition;
+	Vector2 TextPosition;
+	Vector2 currentFileTextPosition;
+
+  Vector2 *pHeadingPosition = &HeadingPosition;
+  Vector2 *pTextPosition = &TextPosition;
+  Vector2 *pcurrentFileTextPosition = &currentFileTextPosition;
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
@@ -118,9 +125,8 @@ int main(void) {
         }
       }
       if (IsKeyReleased(KEY_R)) {
-        PauseMusicStream(currentMusic);
-        SeekMusicStream(currentMusic, 1);
-        ResumeMusicStream(currentMusic);
+				StopMusicStream(currentMusic);
+				PlayMusicStream(currentMusic);
       }
       if (GetMouseWheelMove() != 0) {
         currentVolume += GetMouseWheelMove() * 0.05;
@@ -138,9 +144,8 @@ int main(void) {
       printf("Dropped File: %s\n", droppedFiles.paths[0]);
       Music tempMusic = LoadMusicStream(droppedFiles.paths[0]);
       if (IsMusicReady(tempMusic)) {
-        printf("Music Stream ready!\n"); // TODO: Remove when done
         if (trackLoaded) {
-
+					StopMusicStream(currentMusic);
           DetachAudioStreamProcessor(currentMusic.stream, callback);
           free(global_frame_buffer);
           free(currentFileName);
@@ -149,17 +154,17 @@ int main(void) {
         UnloadMusicStream(tempMusic);
         sample_rate = currentMusic.stream.sampleRate;
         buff_size = sample_rate / 100 *
-                    (5.0 / 60.0 * 100.0); // Capture per frame of data
-        global_buffer_size = &buff_size;
+                    (1.0 / 60.0 * 100.0); // Capture per frame of data
+        global_buffer_size = buff_size;
         global_frame_buffer =
-            malloc(*global_buffer_size * sizeof(global_frame_buffer));
+            malloc(global_buffer_size * sizeof(*global_frame_buffer));
         for (size_t i = 0; i < buff_size; i++) {
           global_frame_buffer[i].left = 0.0;
           global_frame_buffer[i].right = 0.0;
         }
         AttachAudioStreamProcessor(currentMusic.stream, callback);
         SetMusicVolume(currentMusic, currentVolume);
-        printf("Scan buffer size: %zu\n", *global_buffer_size);
+        printf("Scan buffer size: %zu\n", global_buffer_size);
         currentFileTextVec2 = MeasureTextEx(
             NormalTextFont, GetFileNameWithoutExt(droppedFiles.paths[0]),
             mainTextSize, 0);
@@ -183,17 +188,15 @@ int main(void) {
     //----------------------------------------------------------------------------------
     int w = GetRenderWidth();
     int h = GetRenderHeight();
-    Vector2 HeadingPosition = {w * 0.5 - HeadingVec2.x,
-                               h * 0.5 - HeadingVec2.y -
-                                   25}; // TODO CHANGE THE WAY TEXT IS CENTERED
-    Vector2 TextPosition = {w * 0.5 - NormalTextVec2.x,
-                            h * 0.5 - NormalTextVec2.y +
-                                25}; // TODO CHANGE THE WAY TEXT IS CENTERED
+    pHeadingPosition->x = w * 0.5 - HeadingVec2.x;
+    pHeadingPosition->y = h * 0.5 - HeadingVec2.y - 25;
 
-    Vector2 currentFileTextPosition = {w * 0.5 - currentFileTextVec2.x,
-                                       h * 0.5 - currentFileTextVec2.y +
-                                           h * 0.25}; // TODO CHANGE THE WAY
-                                                      // TEXT IS CENTERED Draw
+    pTextPosition->x = w * 0.5 - NormalTextVec2.x;
+    pTextPosition->y = h * 0.5 - NormalTextVec2.y + 25;
+
+    pcurrentFileTextPosition->x = w * 0.5 - currentFileTextVec2.x;
+    pcurrentFileTextPosition->y = h * 0.5 - currentFileTextVec2.y + h * 0.25;
+    // TEXT IS CENTERED Draw
     //----------------------------------------------------------------------------------
     float seek_ratio = 0;
     if (trackLoaded) {
@@ -205,7 +208,7 @@ int main(void) {
 
     ClearBackground(MOCHABASE);
 
-    size_t stride = 12;
+    size_t stride = 8;
     int cell_width = 1;
     if (trackLoaded) {
       for (size_t i = 0; i < global_frames_count; i += stride) {
@@ -226,16 +229,17 @@ int main(void) {
         }
       }
 
-      DrawTextEx(NormalTextFont, currentFileName, currentFileTextPosition,
+      DrawTextEx(NormalTextFont, currentFileName, *pcurrentFileTextPosition,
                  mainTextSize, 0, MOCHATEXT);
       DrawRectangle(0, h - h * 0.05, w * seek_ratio, h * 0.05, MOCHAOVERLAY0);
     } else {
 
-      DrawTextEx(HeadingFont, headerText, HeadingPosition, Heading1Size, 0,
+      DrawTextEx(HeadingFont, headerText, *pHeadingPosition, Heading1Size, 0,
                  MOCHATEXT);
-      DrawTextEx(NormalTextFont, normalText, TextPosition, mainTextSize, 0,
+      DrawTextEx(NormalTextFont, normalText, *pTextPosition, mainTextSize, 0,
                  MOCHATEXT);
     }
+		DrawFPS(50, 50);
     EndDrawing();
     //----------------------------------------------------------------------------------
   }
