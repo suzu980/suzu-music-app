@@ -242,7 +242,6 @@ int main(void) {
                          (i + stride) * ((float)w / global_frames_count),
                          h * 0.5 - h * 0.5 * t2 * scale,
                          MOCHABLUE);
-
         } else {
           (!wireframe)
               ? DrawRectangle(i * ((float)w / global_frames_count), h * 0.5 - 1,
