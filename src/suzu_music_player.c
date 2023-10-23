@@ -159,7 +159,7 @@ int main(void) {
         UnloadMusicStream(tempMusic);
         sample_rate = currentMusic.stream.sampleRate;
         buff_size = sample_rate / 100 *
-                    (1.0 / 60.0 * 100.0); // Capture per frame of data
+                    (6.0 / 60.0 * 100.0); // Capture per frame of data
         global_buffer_size = buff_size;
         global_frame_buffer =
             malloc(global_buffer_size * sizeof(*global_frame_buffer));
