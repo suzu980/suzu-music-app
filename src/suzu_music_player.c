@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,7 @@ typedef struct {
 size_t global_buffer_size;
 Frame *global_frame_buffer;
 size_t global_frames_count = 0;
+float pi;
 
 void callback(void *bufferData, unsigned int frames) {
   size_t buffer_capacity = global_buffer_size;
@@ -60,12 +62,15 @@ void callback(void *bufferData, unsigned int frames) {
     global_frames_count = buffer_capacity;
   }
 }
+
 int main(void) {
 
-  bool trackLoaded = false;
   // Initialization
   //--------------------------------------------------------------------------------------
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+	pi = atan2f(1, 1) * 4;
+	float x = pi / 180; 
+  bool trackLoaded = false;
+  // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(INITIALSCREEN_WIDTH, INITIALSCREEN_HEIGHT, "Music Visualizer");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(65536);
@@ -103,9 +108,9 @@ int main(void) {
 
   float sample_rate;
   size_t buff_size;
-	Vector2 HeadingPosition;
-	Vector2 TextPosition;
-	Vector2 currentFileTextPosition;
+  Vector2 HeadingPosition;
+  Vector2 TextPosition;
+  Vector2 currentFileTextPosition;
 
   Vector2 *pHeadingPosition = &HeadingPosition;
   Vector2 *pTextPosition = &TextPosition;
@@ -125,8 +130,8 @@ int main(void) {
         }
       }
       if (IsKeyReleased(KEY_R)) {
-				StopMusicStream(currentMusic);
-				PlayMusicStream(currentMusic);
+        StopMusicStream(currentMusic);
+        PlayMusicStream(currentMusic);
       }
       if (GetMouseWheelMove() != 0) {
         currentVolume += GetMouseWheelMove() * 0.05;
@@ -145,7 +150,7 @@ int main(void) {
       Music tempMusic = LoadMusicStream(droppedFiles.paths[0]);
       if (IsMusicReady(tempMusic)) {
         if (trackLoaded) {
-					StopMusicStream(currentMusic);
+          StopMusicStream(currentMusic);
           DetachAudioStreamProcessor(currentMusic.stream, callback);
           free(global_frame_buffer);
           free(currentFileName);
@@ -239,7 +244,7 @@ int main(void) {
       DrawTextEx(NormalTextFont, normalText, *pTextPosition, mainTextSize, 0,
                  MOCHATEXT);
     }
-		DrawFPS(50, 50);
+    DrawFPS(50, 50);
     EndDrawing();
     //----------------------------------------------------------------------------------
   }
