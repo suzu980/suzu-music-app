@@ -4,7 +4,7 @@ Music Visualizer written in C for educational purposes using Raylib.
 ![Preview](images/preview.png)
 
 Libraries used:
-- [Raylib](https://www.raylib.com/);
+- [Raylib](https://www.raylib.com/)
 
 Resources referenced: 
 - [Tsoding's FFT Video](https://youtu.be/Xdbk1Pr5WXU?si=X0qvTVnFx3BDvT0j)
