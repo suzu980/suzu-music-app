@@ -2,9 +2,18 @@
 ## Music Player and Visualizer
 Music Visualizer written in C for educational purposes using Raylib.
 
+### Tested File Types
+- MP3
+- FLAC
+
+### Hotkeys
+`<Space>` Pause/Play  
+`<G>` Show graph instead of bars  
+`<R>` Replay dropped music  
 
 ### Video Preview
 https://github.com/suzu980/suzu-music-player/assets/145551210/b2153565-ab57-48f1-9575-b09de982f394
+
 
 
 #### Libraries used:
