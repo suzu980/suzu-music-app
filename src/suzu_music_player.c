@@ -124,6 +124,7 @@ int main(void) {
       LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
   int horLoc = GetShaderLocation(blurShader, "horizontal");
 	int cLoc = GetShaderLocation(glowPassShader, "blurred");
+
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
@@ -201,10 +202,6 @@ int main(void) {
       }
     }
 
-    // Update
-    //----------------------------------------------------------------------------------
-    // TODO: Update your variables here
-    //----------------------------------------------------------------------------------
     int w = GetRenderWidth();
     int h = GetRenderHeight();
     pHeadingPosition->x = w * 0.5 - HeadingVec2.x;
@@ -215,16 +212,15 @@ int main(void) {
 
     pcurrentFileTextPosition->x = w * 0.5 - currentFileTextVec2.x;
     pcurrentFileTextPosition->y = h * 0.5 - currentFileTextVec2.y + h * 0.35;
-    // TEXT IS CENTERED Draw
-    //----------------------------------------------------------------------------------
+
     float seek_ratio = 0;
     if (trackLoaded) {
       seek_ratio =
           GetMusicTimePlayed(currentMusic) / GetMusicTimeLength(currentMusic);
     }
 
-    size_t stride = (!wireframe) ? 32 : 8;
-    int cell_width = 2;
+    size_t stride = (!wireframe) ? 16 : 16; 
+    int cell_width = 3;
     if (trackLoaded) {
       BeginTextureMode(target);
       ClearBackground(MOCHABASE);
@@ -282,6 +278,8 @@ int main(void) {
         EndTextureMode();
         horizontal = !horizontal;
       }
+
+			// DRAW
       BeginDrawing();
       ClearBackground(MOCHABASE);
 			BeginShaderMode(glowPassShader);
