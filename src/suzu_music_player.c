@@ -219,7 +219,7 @@ int main(void) {
           GetMusicTimePlayed(currentMusic) / GetMusicTimeLength(currentMusic);
     }
 
-    size_t stride = (!wireframe) ? 16 : 16; 
+    size_t stride = (!wireframe) ? 16 : 2; 
     int cell_width = 3;
     if (trackLoaded) {
       BeginTextureMode(target);
