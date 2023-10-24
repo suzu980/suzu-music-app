@@ -76,6 +76,9 @@ int main(void) {
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
   Music currentMusic;
   float currentVolume = 0.75;
+  Shader bloomShader = LoadShader(0, "resources/shaders/bloom.fs");
+  Shader hdrShader = LoadShader(0, "resources/shaders/hdr.fs");
+  Shader combinedShader = LoadShader(0, "resources/shaders/combined.fs");
 
   const char *headerText = "Music Visualizer";
   const char *normalText = "Drag and drop an audio file to get started (.mp3)";
@@ -114,6 +117,13 @@ int main(void) {
   Vector2 *pHeadingPosition = &HeadingPosition;
   Vector2 *pTextPosition = &TextPosition;
   Vector2 *pcurrentFileTextPosition = &currentFileTextPosition;
+
+  RenderTexture2D target =
+      LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+  RenderTexture2D targethdr =
+      LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+  int horLoc = GetShaderLocation(bloomShader, "horizontal");
+	int cLoc = GetShaderLocation(combinedShader, "blurred");
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
@@ -154,10 +164,10 @@ int main(void) {
         if (trackLoaded) {
           StopMusicStream(currentMusic);
           DetachAudioStreamProcessor(currentMusic.stream, callback);
-					UnloadMusicStream(currentMusic);
+          UnloadMusicStream(currentMusic);
           free(global_frame_buffer);
           free(currentFileName);
-					global_frames_count = 0;
+          global_frames_count = 0;
         }
         currentMusic = LoadMusicStream(droppedFiles.paths[0]);
         UnloadMusicStream(tempMusic);
@@ -213,13 +223,11 @@ int main(void) {
           GetMusicTimePlayed(currentMusic) / GetMusicTimeLength(currentMusic);
     }
 
-    BeginDrawing();
-
-    ClearBackground(MOCHABASE);
-
     size_t stride = (!wireframe) ? 32 : 1;
     int cell_width = 1;
     if (trackLoaded) {
+      BeginTextureMode(target);
+      ClearBackground(MOCHABASE);
       for (size_t i = 0;
            i < global_frames_count && (i + stride) < global_frames_count;
            i += stride) {
@@ -234,39 +242,72 @@ int main(void) {
         if (t > 0) {
           (!wireframe)
               ? DrawRectangle(i * ((float)w / global_frames_count),
-                              h * 0.5 - h * 0.5 * t  * scale + 1,
-                              1 * cell_width,
+                              h * 0.5 - h * 0.5 * t * scale + 1, 1 * cell_width,
                               h * 0.5 * t * scale, MOCHABLUE)
               : DrawLine(i * ((float)w / global_frames_count),
                          h * 0.5 - h * 0.5 * t * scale,
                          (i + stride) * ((float)w / global_frames_count),
-                         h * 0.5 - h * 0.5 * t2 * scale,
-                         MOCHABLUE);
+                         h * 0.5 - h * 0.5 * t2 * scale, MOCHABLUE);
         } else {
           (!wireframe)
               ? DrawRectangle(i * ((float)w / global_frames_count), h * 0.5 - 1,
-                              1 * cell_width,
-                              -(h * 0.5 * t *  scale), MOCHARED)
+                              1 * cell_width, -(h * 0.5 * t * scale), MOCHARED)
               : DrawLine(i * ((float)w / global_frames_count),
                          h * 0.5 - (h * 0.5 * t * scale),
                          (i + stride) * ((float)w / global_frames_count),
-                         h * 0.5 - (h * 0.5 * t2 * scale),
-                         MOCHARED);
+                         h * 0.5 - (h * 0.5 * t2 * scale), MOCHARED);
         }
       }
+      EndTextureMode();
 
+      BeginTextureMode(targethdr);
+      BeginShaderMode(hdrShader);
+      DrawTextureRec(target.texture,
+                     (Rectangle){0, 0, (float)target.texture.width,
+                                 (float)-target.texture.height},
+                     (Vector2){0, 0}, WHITE);
+      EndShaderMode();
+      EndTextureMode();
+      int horizontal = true;
+      int amt = 10;
+      for (int i = 0; i < amt; i++) {
+        SetShaderValue(bloomShader, horLoc, &horizontal, SHADER_UNIFORM_INT);
+        BeginTextureMode(targethdr);
+        BeginShaderMode(bloomShader);
+        DrawTextureRec(targethdr.texture,
+                       (Rectangle){0, 0, (float)targethdr.texture.width,
+                                   (float)-targethdr.texture.height},
+                       (Vector2){0, 0}, WHITE);
+        EndShaderMode();
+        EndTextureMode();
+        horizontal = !horizontal;
+      }
+      BeginDrawing();
+      ClearBackground(MOCHABASE);
+			BeginShaderMode(combinedShader);
+			SetShaderValueTexture(combinedShader, cLoc, targethdr.texture);
+      DrawTextureRec(target.texture,
+                     (Rectangle){0, 0, (float)target.texture.width,
+                                 (float)-target.texture.height},
+                     (Vector2){0, 0}, WHITE);
+			EndShaderMode();
       DrawTextEx(NormalTextFont, currentFileName, *pcurrentFileTextPosition,
                  mainTextSize, 0, MOCHATEXT);
       DrawRectangle(0, h - h * 0.05, w * seek_ratio, h * 0.05, MOCHAOVERLAY0);
+      DrawFPS(50, 50);
+      EndDrawing();
     } else {
+      BeginDrawing();
+      ClearBackground(MOCHABASE);
 
       DrawTextEx(HeadingFont, headerText, *pHeadingPosition, Heading1Size, 0,
                  MOCHATEXT);
       DrawTextEx(NormalTextFont, normalText, *pTextPosition, mainTextSize, 0,
                  MOCHATEXT);
+      DrawFPS(50, 50);
+      EndDrawing();
     }
-    DrawFPS(50, 50);
-    EndDrawing();
+
     //----------------------------------------------------------------------------------
   }
 
@@ -279,6 +320,9 @@ int main(void) {
     free(global_frame_buffer);
     free(currentFileName);
   }
+  UnloadShader(bloomShader);
+	UnloadShader(hdrShader);
+	UnloadShader(combinedShader);
   CloseAudioDevice();
   //--------------------------------------------------------------------------------------
   CloseWindow(); // Close window and OpenGL context
