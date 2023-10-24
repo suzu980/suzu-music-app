@@ -14,7 +14,8 @@ void main()
 		//const float gamma = 2.2;
     vec3 originalColor = texture(original, fragTexCoord).rgb;      
     vec3 bloomColor = texture(blurred, fragTexCoord).rgb;
-    originalColor += bloomColor; // additive blending
+    //originalColor += bloomColor; // additive blending
+		originalColor = bloomColor+originalColor-(originalColor * bloomColor);
     // tone mapping
     finalColor = vec4(originalColor, 1.0);
 }

@@ -76,9 +76,9 @@ int main(void) {
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
   Music currentMusic;
   float currentVolume = 0.75;
-  Shader bloomShader = LoadShader(0, "resources/shaders/bloom.fs");
-  Shader hdrShader = LoadShader(0, "resources/shaders/hdr.fs");
-  Shader combinedShader = LoadShader(0, "resources/shaders/combined.fs");
+  Shader blurShader = LoadShader(0, "resources/shaders/blur.fs");
+  Shader lightFilterShader = LoadShader(0, "resources/shaders/light_filter.fs");
+  Shader glowPassShader = LoadShader(0, "resources/shaders/glow_pass.fs");
 
   const char *headerText = "Music Visualizer";
   const char *normalText = "Drag and drop an audio file to get started (.mp3)";
@@ -122,8 +122,8 @@ int main(void) {
       LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
   RenderTexture2D targethdr =
       LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
-  int horLoc = GetShaderLocation(bloomShader, "horizontal");
-	int cLoc = GetShaderLocation(combinedShader, "blurred");
+  int horLoc = GetShaderLocation(blurShader, "horizontal");
+	int cLoc = GetShaderLocation(glowPassShader, "blurred");
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
@@ -223,8 +223,8 @@ int main(void) {
           GetMusicTimePlayed(currentMusic) / GetMusicTimeLength(currentMusic);
     }
 
-    size_t stride = (!wireframe) ? 32 : 1;
-    int cell_width = 1;
+    size_t stride = (!wireframe) ? 32 : 8;
+    int cell_width = 2;
     if (trackLoaded) {
       BeginTextureMode(target);
       ClearBackground(MOCHABASE);
@@ -237,7 +237,7 @@ int main(void) {
         float r2 = global_frame_buffer[i + stride].right;
         float t = (l + r) * 0.5;
         float t2 = (l2 + r2) * 0.5;
-        float scale = 1.0;
+        float scale = 0.75;
 
         if (t > 0) {
           (!wireframe)
@@ -261,7 +261,7 @@ int main(void) {
       EndTextureMode();
 
       BeginTextureMode(targethdr);
-      BeginShaderMode(hdrShader);
+      BeginShaderMode(lightFilterShader);
       DrawTextureRec(target.texture,
                      (Rectangle){0, 0, (float)target.texture.width,
                                  (float)-target.texture.height},
@@ -271,9 +271,9 @@ int main(void) {
       int horizontal = true;
       int amt = 10;
       for (int i = 0; i < amt; i++) {
-        SetShaderValue(bloomShader, horLoc, &horizontal, SHADER_UNIFORM_INT);
+        SetShaderValue(blurShader, horLoc, &horizontal, SHADER_UNIFORM_INT);
         BeginTextureMode(targethdr);
-        BeginShaderMode(bloomShader);
+        BeginShaderMode(blurShader);
         DrawTextureRec(targethdr.texture,
                        (Rectangle){0, 0, (float)targethdr.texture.width,
                                    (float)-targethdr.texture.height},
@@ -284,8 +284,8 @@ int main(void) {
       }
       BeginDrawing();
       ClearBackground(MOCHABASE);
-			BeginShaderMode(combinedShader);
-			SetShaderValueTexture(combinedShader, cLoc, targethdr.texture);
+			BeginShaderMode(glowPassShader);
+			SetShaderValueTexture(glowPassShader, cLoc, targethdr.texture);
       DrawTextureRec(target.texture,
                      (Rectangle){0, 0, (float)target.texture.width,
                                  (float)-target.texture.height},
@@ -294,7 +294,7 @@ int main(void) {
       DrawTextEx(NormalTextFont, currentFileName, *pcurrentFileTextPosition,
                  mainTextSize, 0, MOCHATEXT);
       DrawRectangle(0, h - h * 0.05, w * seek_ratio, h * 0.05, MOCHAOVERLAY0);
-      DrawFPS(50, 50);
+      //DrawFPS(50, 50);
       EndDrawing();
     } else {
       BeginDrawing();
@@ -304,7 +304,7 @@ int main(void) {
                  MOCHATEXT);
       DrawTextEx(NormalTextFont, normalText, *pTextPosition, mainTextSize, 0,
                  MOCHATEXT);
-      DrawFPS(50, 50);
+      //DrawFPS(50, 50);
       EndDrawing();
     }
 
@@ -320,9 +320,9 @@ int main(void) {
     free(global_frame_buffer);
     free(currentFileName);
   }
-  UnloadShader(bloomShader);
-	UnloadShader(hdrShader);
-	UnloadShader(combinedShader);
+  UnloadShader(blurShader);
+	UnloadShader(lightFilterShader);
+	UnloadShader(glowPassShader);
   CloseAudioDevice();
   //--------------------------------------------------------------------------------------
   CloseWindow(); // Close window and OpenGL context
