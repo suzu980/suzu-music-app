@@ -1,7 +1,7 @@
 import math
 
 sample_rate =64 
-N =16 #analyse 0.5 window
+N = 32#analyse 0.5 window
 
 signal_length = 2048
 
@@ -19,6 +19,10 @@ freq = []
 
 for i in range(N):
     freq.append(0.0)
+
+## TODO FFT
+def fft(x,f,k):
+    print("Unimplemented yet")
 
 def dft(x,f,k):
     hann = 0.5 - 0.5 * math.cos(2 * math.pi * k / N-1)
@@ -39,7 +43,10 @@ for i in range((int)(N/2)):
     max_freq = sample_rate /2  
     freq_per_bin = (max_freq) / (N /2)
     q = i * freq_per_bin
-    print("Frequency: %d\t%.2f" % (q,abs(freq[i]/N)))
+    power_spec = abs(freq[i]) **2
+    r = power_spec 
+    log_spec = math.log(r)/1
+    print("Frequency: %d\t%.2f" % (q, log_spec))
 
 ## TODO Change scale to logarithmic scale
 
