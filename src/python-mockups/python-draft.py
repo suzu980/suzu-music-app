@@ -1,9 +1,9 @@
 import math
 
-sample_rate = 32 
-N = 32 #analyse 0.5 window
+sample_rate =16 
+N = 16#analyse 0.5 window
 
-signal_length = 128 
+signal_length =16 
 
 xdata = []
 for i in range(signal_length):
