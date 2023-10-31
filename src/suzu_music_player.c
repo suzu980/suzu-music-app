@@ -10,8 +10,8 @@
 
 #define ARRAY_LEN(xs) sizeof(xs) / sizeof(xs[0])
 
-#define INITIALSCREEN_WIDTH 1280
-#define INITIALSCREEN_HEIGHT 360
+#define INITIALSCREEN_WIDTH 256
+#define INITIALSCREEN_HEIGHT 256
 
 #define MOCHABASE                                                              \
   (Color) { 30, 30, 46, 255 }
@@ -27,7 +27,7 @@
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-const size_t N = 8192;
+const size_t N = 2048;
 
 typedef struct {
   float left;
@@ -35,7 +35,7 @@ typedef struct {
 } Frame;
 
 size_t global_frames_count = 0;
-Frame *global_frame_buffer;
+Frame *global_audio_buffer;
 float pi;
 
 float *hannCoeffs;
@@ -46,15 +46,15 @@ void initialize_coeff() {
   }
 }
 void initialize_frame_buffer() {
-  global_frame_buffer = malloc(N * sizeof(*global_frame_buffer));
+  global_audio_buffer = malloc(N * sizeof(*global_audio_buffer));
   for (size_t k = 0; k < N; ++k) {
-    global_frame_buffer[k].left = 0.0;
-    global_frame_buffer[k].right = 0.0;
+    global_audio_buffer[k].left = 0.0;
+    global_audio_buffer[k].right = 0.0;
   }
 }
 void freeVariables() {
   free(hannCoeffs);
-  free(global_frame_buffer);
+  free(global_audio_buffer);
 }
 
 void fft(float x[], size_t n, int s, complex float *out) {
@@ -79,21 +79,21 @@ void fft(float x[], size_t n, int s, complex float *out) {
 void callbackFFT(void *bufferData, unsigned int frames) {
   size_t buffer_capacity = N;
   if (frames <= buffer_capacity - global_frames_count) {
-    memcpy(global_frame_buffer + global_frames_count, bufferData,
+    memcpy(global_audio_buffer + global_frames_count, bufferData,
            sizeof(Frame) * frames);
     global_frames_count += frames;
   } else if (frames <= buffer_capacity) {
-    memmove(global_frame_buffer,
-            global_frame_buffer +
+    memmove(global_audio_buffer,
+            global_audio_buffer +
                 (frames - buffer_capacity + global_frames_count),
             sizeof(Frame) * (buffer_capacity - frames));
     global_frames_count = buffer_capacity - frames;
-    memcpy(global_frame_buffer + global_frames_count, bufferData,
+    memcpy(global_audio_buffer + global_frames_count, bufferData,
            sizeof(Frame) * frames);
     global_frames_count = buffer_capacity;
   } else {
     printf("WARNING:Buffer OVERLOAD\n");
-    memcpy(global_frame_buffer, bufferData, sizeof(Frame) * buffer_capacity);
+    memcpy(global_audio_buffer, bufferData, sizeof(Frame) * buffer_capacity);
     global_frames_count = buffer_capacity;
   }
 }
@@ -103,6 +103,7 @@ int main(void) {
   // Initialization
   //--------------------------------------------------------------------------------------
   pi = atan2f(1, 1) * 4;
+  float twelfth = powf(2.0, 1.0 / 12.0);
   int f = 0;
   int nyquist;
   SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
@@ -120,6 +121,7 @@ int main(void) {
 
   AttachAudioStreamProcessor(currentMusic.stream, callbackFFT);
   PlayMusicStream(currentMusic);
+  float interpolated_magnitudes[N / 2];
 
   //--------------------------------------------------------------------------------------
 
@@ -128,6 +130,7 @@ int main(void) {
   {
     int w = GetScreenWidth();
     int h = GetScreenHeight();
+    float deltaTime = GetFrameTime();
     f += 1;
     UpdateMusicStream(currentMusic);
 
@@ -137,54 +140,59 @@ int main(void) {
         spectrum[k] = 0.0;
       } else {
         spectrum[k] =
-            (global_frame_buffer[k].left + global_frame_buffer[k].right) * 0.5;
+            (global_audio_buffer[k].left + global_audio_buffer[k].right) * 0.5;
       }
-    }
-    for (size_t k = 0; k < N; ++k) {
       spectrum[k] = spectrum[k] * hannCoeffs[k];
     }
 
     complex float fft_out[N];
-    float magnitudes[N / 2];
-    float lowest = 0.0;
-    float peak = 0.0;
+    // float lowest = 0.0f;
+    float peak = 0.0f;
     fft(spectrum, N, 1, fft_out);
+    float magnitudes[N / 2];
+    size_t M = 0;
+    //// Fixed Bin Sizes
+    // for (float k = 1.0f; k < N / 2; k *= twelfth) {
+    //   float k_next = ceil(k * twelfth);
+    //   float peak_amp = 0.0f;
+    //   float low_amp = 0.0f;
+    //   for (size_t f = (size_t)k; f < N / 2 && f < (size_t)k_next; ++f) {
+    //     float r = crealf(fft_out[f]);
+    //     float i = cimag(fft_out[f]);
+    //     float x = 20 * log10f(powf(r, 2) + powf(i, 2));
+    //     if (x > peak_amp)
+    //       peak_amp = x;
+    //   }
+    //   if (peak < peak_amp)
+    //     peak = peak_amp;
+    //   magnitudes[M++] = peak_amp;
+    // }
+    //// ==================
+    /// LOG SCALE
     for (size_t k = 0; k < (N / 2); ++k) {
       float r = crealf(fft_out[k]);
       float i = cimag(fft_out[k]);
       magnitudes[k] = logf(powf(r, 2) + powf(i, 2));
       if (peak < magnitudes[k])
         peak = magnitudes[k];
-      if (lowest > magnitudes[k])
-        lowest = magnitudes[k];
     }
-		//peak = peak - lowest;
-    for (size_t k = 0; k < (N / 2); ++k) {
-			//magnitudes[k] += -lowest;
-		}
 
     BeginDrawing();
     ClearBackground(MOCHABASE);
-    // Fast Fourier Transform
     int bar_idx = 0;
-    for (size_t k = 0; k < (N / 2); ++k) {
-      float log, logNext;
-      int logPos, logNextPos, cell_width, bar_h, bar_h_next;
-      log = log10((float)(k)*nyquist / (float)(N / 2));
-      logNext = log10((float)(k + 1) * nyquist / (float)(N / 2));
-      logPos = ceilf(log / log_max * w);
-      logNextPos = ceilf(logNext / log_max * w);
-      cell_width = logNextPos - logPos;
-      if (k == 0) {
-        logPos = 0;
-        cell_width = logNextPos;
-      }
-      bar_h = h * (magnitudes[k] / peak) - 200;
-      bar_h_next = h * (magnitudes[k + 1] / peak);
-      DrawRectangle(logPos, h - bar_h - 100, 1, bar_h, MOCHABLUE);
+    for (size_t k = 0; k < (N/2); ++k) {
+      int cell_width, bar_h;
+      int xpos = k * w / M;
+      bar_h = h * (magnitudes[k] / peak) ;
+      int x_log = (log10f(k) / log10f(N/2)) * w;
+      int x_log_next = (log10f(k+1) / log10f(N/2)) * w;
+			cell_width = x_log_next - x_log;
+      // DrawRectangle(xpos, h - bar_h - 50, w / M - 2, bar_h, MOCHABLUE); //
+      // LOGARITMIC SCALE BUT SAME BIN SIZE
+      DrawRectangle(x_log, h - bar_h, cell_width, bar_h, MOCHABLUE); // LOGARITHMIC SCALE
       bar_idx += 1;
     }
-    DrawFPS(50, 50);
+    //DrawFPS(50, 50);
     EndDrawing();
 
     //----------------------------------------------------------------------------------
