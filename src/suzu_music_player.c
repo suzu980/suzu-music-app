@@ -10,8 +10,8 @@
 
 #define ARRAY_LEN(xs) sizeof(xs) / sizeof(xs[0])
 
-#define INITIALSCREEN_WIDTH 640 
-#define INITIALSCREEN_HEIGHT 360 
+#define INITIALSCREEN_WIDTH 1280
+#define INITIALSCREEN_HEIGHT 720
 
 #define MOCHABASE                                                              \
   (Color) { 30, 30, 46, 255 }
@@ -95,6 +95,7 @@ void callback_audio(void *bufferData, unsigned int frames) {
     global_frames_count = buffer_capacity;
   }
 }
+void screenResizeCallback(int width, int height) {}
 
 int main(void) {
 
@@ -115,6 +116,10 @@ int main(void) {
   AttachAudioStreamProcessor(currentMusic.stream, callback_audio);
   PlayMusicStream(currentMusic);
   RenderTexture2D renderTex = LoadRenderTexture(256, 2);
+  RenderTexture2D screenTex =
+      LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+  Shader visualizerShader = LoadShader(0, "resources/shaders/music.fs");
+  int xyLoc = GetShaderLocation(visualizerShader, "ires");
   float smooth[N / 2];
   for (size_t i = 0; i < N / 2; ++i) {
     smooth[i] = 0.0f;
@@ -125,8 +130,15 @@ int main(void) {
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
+    //UnloadRenderTexture(screenTex);
+    //screenTex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+    xyLoc = GetShaderLocation(visualizerShader, "windowres");
     int w = GetScreenWidth();
     int h = GetScreenHeight();
+    float c[2];
+    c[0] = w;
+    c[1] = h;
+    SetShaderValue(visualizerShader, xyLoc, c, SHADER_UNIFORM_VEC2);
     float deltaTime = GetFrameTime();
     f += 1;
     UpdateMusicStream(currentMusic);
@@ -158,11 +170,11 @@ int main(void) {
       float i = cimag(fft_out[k]);
       magnitudes[k] = log10f(powf(r, 2) + powf(i, 2));
       if (isnan(magnitudes[k]) || isinf(magnitudes[k])) {
-				magnitudes[k] = 0;
+        magnitudes[k] = 0;
       }
       if (peak < magnitudes[k])
         peak = magnitudes[k];
-			smooth[k] += (magnitudes[k] - smooth[k])*10.0*deltaTime;
+      smooth[k] += (magnitudes[k] - smooth[k]) * 10.0 * deltaTime;
     }
 
     BeginTextureMode(renderTex);
@@ -170,44 +182,57 @@ int main(void) {
     for (size_t k = 0; k < (N / 2); ++k) {
       int cell_width, new_color;
       new_color = 255 * (smooth[k] / peak);
-			if (new_color > 255){
-				new_color = 255;
-			}
-			if (new_color < 0){
-				new_color = 0;
-			}
+      if (new_color > 255) {
+        new_color = 255;
+      }
+      if (new_color < 0) {
+        new_color = 0;
+      }
       Color c = {new_color, 0, 0, 255};
       int x_log = (log10f(k) / log10f(N / 2)) * 256;
       int x_log_next = (log10f(k + 1) / log10f(N / 2)) * 256;
-			h = 128 * (smooth[k]/peak);
+      h = 128 * (smooth[k] / peak);
       cell_width = x_log_next - x_log;
       DrawRectangle(x_log, 0, cell_width, 1, c);
-			//For Debug
-      //DrawRectangle(x_log, 127-h, cell_width, h, c);
+      // For Debug
+      // DrawRectangle(x_log, 127-h, cell_width, h, c);
     }
     for (size_t k = 0; k < (N); ++k) {
       int new_color;
       new_color = 255 * spectrum_t[k];
-			if (new_color > 255){
-				new_color = 255;
-			}
-			if (new_color < 0){
-				new_color = 0;
-			}
+      if (new_color > 255) {
+        new_color = 255;
+      }
+      if (new_color < 0) {
+        new_color = 0;
+      }
       Color c = {0, new_color, 0, 255};
       int xy = ((float)k / (float)N) * 256;
       DrawRectangle(xy, 1, 1, 1, c);
-			//For Debug
-      //DrawRectangle(xy, 127, 1, 128, c);
+      // For Debug
+      // DrawRectangle(xy, 127, 1, 128, c);
     }
     EndTextureMode();
+
+    BeginTextureMode(screenTex);
+    ClearBackground(BLACK);
+
+    EndTextureMode();
+
     BeginDrawing();
     ClearBackground(MOCHABASE);
-		//To Check Frame Buffer Tex
-    //DrawTextureRec(renderTex.texture,
-    //               (Rectangle){0, 0, (float)renderTex.texture.width,
-    //                           (float)-renderTex.texture.height},
-    //               (Vector2){0, 0}, WHITE);
+    BeginShaderMode(visualizerShader);
+    DrawTexturePro(
+        screenTex.texture,
+        (Rectangle){0, 0, (float)screenTex.texture.width, (float)-screenTex.texture.height},
+        (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()},
+        (Vector2){0, 0},0.0, WHITE);
+    // To Check Frame Buffer Tex
+    // DrawTextureRec(renderTex.texture,
+    //                (Rectangle){0, 0, (float)renderTex.texture.width,
+    //                            (float)-renderTex.texture.height},
+    //                (Vector2){0, 0}, WHITE);
+    EndShaderMode();
 
     DrawFPS(50, 50);
     EndDrawing();
@@ -216,7 +241,7 @@ int main(void) {
 
   UnloadMusicStream(currentMusic);
   DetachAudioStreamProcessor(currentMusic.stream, callback_audio);
-	UnloadRenderTexture(renderTex);
+  UnloadRenderTexture(renderTex);
 
   CloseAudioDevice();
   freeVariables();
