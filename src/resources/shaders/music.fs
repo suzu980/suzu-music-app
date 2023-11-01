@@ -8,12 +8,20 @@ in vec4 fragColor;
 out vec4 finalColor;
 
 uniform vec2 windowres;
+uniform sampler2D audioFreq;
 
 void main()
 {
-		vec2 uv = fragTexCoord * 2.0 - 1.0;
-		uv.x *= windowres.x / windowres.y;
-		float d = length(uv);
-		//vec2 uv = fragTexCoord;
-		finalColor = vec4(d,d,d, 1.0);
+		vec2 freqMap = fragTexCoord;
+		freqMap.y *= 0.5;
+		freqMap.y -= 0.5; 
+		vec4 texelColor = texture(audioFreq, freqMap); 
+		if (texelColor.r > fragTexCoord.y){
+			finalColor = vec4(1,0,0,1);
+		}else{
+			finalColor = vec4(0.0);
+		}
+		
+
+
 }

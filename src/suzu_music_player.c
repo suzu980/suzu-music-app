@@ -27,7 +27,7 @@
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-const size_t N = 2048;
+const size_t N = 4096;
 
 typedef struct {
   float left;
@@ -95,7 +95,6 @@ void callback_audio(void *bufferData, unsigned int frames) {
     global_frames_count = buffer_capacity;
   }
 }
-void screenResizeCallback(int width, int height) {}
 
 int main(void) {
 
@@ -115,11 +114,12 @@ int main(void) {
 
   AttachAudioStreamProcessor(currentMusic.stream, callback_audio);
   PlayMusicStream(currentMusic);
-  RenderTexture2D renderTex = LoadRenderTexture(256, 2);
+  RenderTexture2D renderTex = LoadRenderTexture(512, 2);
   RenderTexture2D screenTex =
       LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
   Shader visualizerShader = LoadShader(0, "resources/shaders/music.fs");
-  int xyLoc = GetShaderLocation(visualizerShader, "ires");
+  int xyLoc = GetShaderLocation(visualizerShader, "windowres");
+  int texLoc = GetShaderLocation(visualizerShader, "audioFreq");
   float smooth[N / 2];
   for (size_t i = 0; i < N / 2; ++i) {
     smooth[i] = 0.0f;
@@ -130,9 +130,8 @@ int main(void) {
   //  Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
   {
-    //UnloadRenderTexture(screenTex);
-    //screenTex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
-    xyLoc = GetShaderLocation(visualizerShader, "windowres");
+    // UnloadRenderTexture(screenTex);
+    // screenTex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     float c[2];
@@ -189,9 +188,9 @@ int main(void) {
         new_color = 0;
       }
       Color c = {new_color, 0, 0, 255};
-      int x_log = (log10f(k) / log10f(N / 2)) * 256;
-      int x_log_next = (log10f(k + 1) / log10f(N / 2)) * 256;
-      h = 128 * (smooth[k] / peak);
+      int x_log = (log10f(k) / log10f(N / 2)) * 512;
+      int x_log_next = (log10f(k + 1) / log10f(N / 2)) * 512;
+      h = 256 * (smooth[k] / peak);
       cell_width = x_log_next - x_log;
       DrawRectangle(x_log, 0, cell_width, 1, c);
       // For Debug
@@ -207,7 +206,7 @@ int main(void) {
         new_color = 0;
       }
       Color c = {0, new_color, 0, 255};
-      int xy = ((float)k / (float)N) * 256;
+      int xy = ((float)k / (float)N) * 512;
       DrawRectangle(xy, 1, 1, 1, c);
       // For Debug
       // DrawRectangle(xy, 127, 1, 128, c);
@@ -222,17 +221,19 @@ int main(void) {
     BeginDrawing();
     ClearBackground(MOCHABASE);
     BeginShaderMode(visualizerShader);
+    SetShaderValueTexture(visualizerShader, texLoc, renderTex.texture);
     DrawTexturePro(
         screenTex.texture,
-        (Rectangle){0, 0, (float)screenTex.texture.width, (float)-screenTex.texture.height},
+        (Rectangle){0, 0, (float)screenTex.texture.width,
+                    (float)-screenTex.texture.height},
         (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()},
-        (Vector2){0, 0},0.0, WHITE);
+        (Vector2){0, 0}, 0.0, WHITE);
+    EndShaderMode();
     // To Check Frame Buffer Tex
     // DrawTextureRec(renderTex.texture,
     //                (Rectangle){0, 0, (float)renderTex.texture.width,
     //                            (float)-renderTex.texture.height},
     //                (Vector2){0, 0}, WHITE);
-    EndShaderMode();
 
     DrawFPS(50, 50);
     EndDrawing();
