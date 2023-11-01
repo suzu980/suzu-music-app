@@ -152,7 +152,7 @@ int main(void) {
         spectrum[k] =
             (global_audio_buffer[k].left + global_audio_buffer[k].right) * 0.5;
         spectrum_t[k] =
-            (global_audio_buffer[k].left + global_audio_buffer[k].right) * 0.5;
+            (global_audio_buffer[k].left + global_audio_buffer[k].right) * 0.25 + 1;
       }
       spectrum[k] = spectrum[k] * hannCoeffs[k];
     }
@@ -235,7 +235,7 @@ int main(void) {
     //                            (float)-renderTex.texture.height},
     //                (Vector2){0, 0}, WHITE);
 
-    DrawFPS(50, 50);
+    //DrawFPS(50, 50);
     EndDrawing();
     //----------------------------------------------------------------------------------
   }
