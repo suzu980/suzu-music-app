@@ -4,12 +4,11 @@ Music Visualizer written in C for educational purposes using Raylib.
 
 ### Tested File Types
 - MP3
-- FLAC
+- FLAC (Experimental)
 
 ### Hotkeys
 `<Space>` Pause/Play  
-`<G>` Show graph instead of bars  
-`<R>` Replay dropped music  
+`<F5>` Replay dropped music  
 
 #### Libraries used:
 - [Raylib](https://www.raylib.com/)
