@@ -110,16 +110,16 @@ int main(void) {
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
   initialize_coeff();
   initialize_frame_buffer();
-  Music currentMusic = LoadMusicStream("resources/sample-music/MUSIC.mp3");
+  Music currentMusic = LoadMusicStream("resources/sample-music/lumina.mp3");
 
   AttachAudioStreamProcessor(currentMusic.stream, callback_audio);
   PlayMusicStream(currentMusic);
   RenderTexture2D renderTex = LoadRenderTexture(512, 2);
   RenderTexture2D screenTex =
       LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
-  Shader visualizerShader = LoadShader(0, "resources/shaders/music.fs");
-  int xyLoc = GetShaderLocation(visualizerShader, "windowres");
-  int texLoc = GetShaderLocation(visualizerShader, "audioFreq");
+  Shader fftVisualizerShader = LoadShader(0, "resources/shaders/music.fs");
+  int xyLoc = GetShaderLocation(fftVisualizerShader, "windowres");
+  int texLoc = GetShaderLocation(fftVisualizerShader, "audioFreq");
   float smooth[N / 2];
   for (size_t i = 0; i < N / 2; ++i) {
     smooth[i] = 0.0f;
@@ -137,7 +137,7 @@ int main(void) {
     float c[2];
     c[0] = w;
     c[1] = h;
-    SetShaderValue(visualizerShader, xyLoc, c, SHADER_UNIFORM_VEC2);
+    SetShaderValue(fftVisualizerShader, xyLoc, c, SHADER_UNIFORM_VEC2);
     float deltaTime = GetFrameTime();
     f += 1;
     UpdateMusicStream(currentMusic);
@@ -220,13 +220,13 @@ int main(void) {
 
     BeginDrawing();
     ClearBackground(MOCHABASE);
-    BeginShaderMode(visualizerShader);
-    SetShaderValueTexture(visualizerShader, texLoc, renderTex.texture);
+    BeginShaderMode(fftVisualizerShader);
+    SetShaderValueTexture(fftVisualizerShader, texLoc, renderTex.texture);
     DrawTexturePro(
         screenTex.texture,
         (Rectangle){0, 0, (float)screenTex.texture.width,
                     (float)-screenTex.texture.height},
-        (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()},
+        (Rectangle){0, 150, (float)GetScreenWidth(), (float)GetScreenHeight()-150},
         (Vector2){0, 0}, 0.0, WHITE);
     EndShaderMode();
     // To Check Frame Buffer Tex
