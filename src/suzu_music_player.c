@@ -122,6 +122,7 @@ int main(void) {
   AttachAudioStreamProcessor(currentMusic.stream, callbackFFT);
   PlayMusicStream(currentMusic);
   float interpolated_magnitudes[N / 2];
+  RenderTexture2D renderTex = LoadRenderTexture(256, 1);
 
   //--------------------------------------------------------------------------------------
 
@@ -177,23 +178,64 @@ int main(void) {
         peak = magnitudes[k];
     }
 
-    BeginDrawing();
-    ClearBackground(MOCHABASE);
-    int bar_idx = 0;
-    for (size_t k = 0; k < (N/2); ++k) {
-      int cell_width, bar_h;
+    // Generate blank image
+    // Image glsl_image = GenImageColor(256, 256, BLACK);
+    // int img_cells[256] = {0};
+    // for (size_t k = 0; k < (N / 2); ++k) {
+    //  int cell_width, new_color;
+    //  int xpos = k * w / M;
+    //  new_color = 255 * (magnitudes[k] / peak);
+    //  Color c = {0, 0, new_color, 255};
+    //  int x_log = (log10f(k) / log10f(N / 2)) * 256;
+    //  cell_width = 1;
+    //  if (new_color > img_cells[x_log]) {
+    //    //ImageDrawPixel(&glsl_image, x_log, 128, c);
+    //    img_cells[x_log] = new_color;
+    //  }
+    //}
+    // Texture2D glsl_tex = LoadTextureFromImage(glsl_image);
+
+    BeginTextureMode(renderTex);
+    ClearBackground(BLACK);
+    for (size_t k = 0; k < (N / 2); ++k) {
+      int cell_width, bar_h, new_color;
       int xpos = k * w / M;
-      bar_h = h * (magnitudes[k] / peak) ;
-      int x_log = (log10f(k) / log10f(N/2)) * w;
-      int x_log_next = (log10f(k+1) / log10f(N/2)) * w;
-			cell_width = x_log_next - x_log;
+      bar_h = h * (magnitudes[k] / peak);
+      new_color = 255 * (magnitudes[k] / peak);
+      Color c = {new_color, 0, 0, 255};
+      int x_log = (log10f(k) / log10f(N / 2)) * 256;
+      int x_log_next = (log10f(k + 1) / log10f(N / 2)) * 256;
+      cell_width = x_log_next - x_log;
       // DrawRectangle(xpos, h - bar_h - 50, w / M - 2, bar_h, MOCHABLUE); //
       // LOGARITMIC SCALE BUT SAME BIN SIZE
-      DrawRectangle(x_log, h - bar_h, cell_width, bar_h, MOCHABLUE); // LOGARITHMIC SCALE
-      bar_idx += 1;
+      DrawRectangle(x_log, 0, cell_width, 1,
+                    c); // LOGARITHMIC SCALE
     }
-    //DrawFPS(50, 50);
+    EndTextureMode();
+    BeginDrawing();
+    ClearBackground(MOCHABASE);
+    // DrawTextureRec(renderTex.texture,
+    //                (Rectangle){0, 0, (float)renderTex.texture.width,
+    //                            (float)-renderTex.texture.height},
+    //                (Vector2){0, 0}, WHITE);
+    // for (size_t k = 0; k < (N / 2); ++k) {
+    //   int cell_width, bar_h, new_color;
+    //   int xpos = k * w / M;
+    //   bar_h = h * (magnitudes[k] / peak);
+    //   new_color = 255 * (magnitudes[k] / peak);
+    //   Color c = {new_color, 0, 0, 255};
+    //   int x_log = (log10f(k) / log10f(N / 2)) * w;
+    //   int x_log_next = (log10f(k + 1) / log10f(N / 2)) * w;
+    //   cell_width = x_log_next - x_log;
+    //   // DrawRectangle(xpos, h - bar_h - 50, w / M - 2, bar_h, MOCHABLUE); //
+    //   // LOGARITMIC SCALE BUT SAME BIN SIZE
+    //   DrawRectangle(x_log, 0, cell_width, h,
+    //                 c); // LOGARITHMIC SCALE
+    // }
+    //  DrawFPS(50, 50);
     EndDrawing();
+    // UnloadImage(glsl_image);
+    // UnloadTexture(glsl_tex);
 
     //----------------------------------------------------------------------------------
   }
