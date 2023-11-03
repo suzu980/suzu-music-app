@@ -2,6 +2,25 @@
 ## Music Player and Visualizer
 Music Visualizer written in C for educational purposes using Raylib.
 
+### Self Building
+
+#### Linux 
+The `src/`folder contains a Makefile. You can build by using the following command  
+```bash
+make release
+```
+#### Windows
+The `src/`folder contains a Makefile.  
+You need to have mingw installed.  
+Mingw can be installed through scoop:  
+```bash
+scoop install mingw
+```
+After that you can build it with the following command.
+```bash
+mingw32-make release
+```
+
 ### Tested File Types
 - MP3
 - FLAC (Experimental)
