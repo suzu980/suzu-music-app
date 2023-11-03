@@ -1,8 +1,12 @@
 /src/*.exe
 /src/suzu-music-linux
-/src/builds
-/src/builds-debug
+/src/suzu-music-linux-debug
+/src/include
+/src/lib
 /src/raylib
 /src/resources/sample-music/*.mp3
 /src/resources/sample-music/*.flac
 /src/resources/sample-music/*.m4a
+/raylib/src/*.a
+/raylib/src/*.o
+/raylib/src/*.so
