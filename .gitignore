@@ -1,4 +1,5 @@
 /src/*.exe
+/src/suzu-music-linux
 /src/builds
 /src/builds-debug
 /src/raylib
