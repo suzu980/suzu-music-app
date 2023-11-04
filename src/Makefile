@@ -56,8 +56,8 @@ endif
 
 ./lib/libraylib.a: ../raylib/src/libraylib.a
 ifeq ($(OS), Windows_NT)
-	mkdir lib
-	copy ..\raylib\src\libraylib.a .\lib
+	powershell mkdir lib
+	powershell cp ..\raylib\src\libraylib.a .\lib
 else 
 	mkdir -p lib
 	cp ../raylib/src/libraylib.a ./lib/
@@ -67,8 +67,8 @@ endif
 
 ./include/raylib.h: ../raylib/src/raylib.h
 ifeq ($(OS), Windows_NT)
-	mkdir include
-	copy ..\raylib\src\raylib.h .\include
+	powershell mkdir include
+	powershell cp ..\raylib\src\raylib.h .\include
 else 
 	mkdir -p include
 	cp ../raylib/src/raylib.h ./include/
@@ -82,10 +82,10 @@ endif
 
 clean:
 ifeq ($(OS), Windows_NT)
-	if exist lib rd /s /q lib
-	if exist include rd /s /q include
-	if exist suzu-music-win.exe del /q /f suzu-music-win.exe
-	if exist suzu-music-win-debug.exe del /q /f suzu-music-win-debug.exe
+	if exist lib powershell rm -r lib
+	if exist include powershell rm -r include
+	if exist suzu-music-win.exe powershell rm suzu-music-win.exe
+	if exist suzu-music-win-debug.exe powershell rm suzu-music-win-debug.exe
 else 
 	rm -rfv ./lib
 	rm -rfv ./include
