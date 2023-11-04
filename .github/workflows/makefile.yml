@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Build RELEASE
-      run: make build-release
+      run: cd src/ && make build-release
       
     - name: Build DEBUG
-      run: make build-release
+      run: cd src/ && make build-release
