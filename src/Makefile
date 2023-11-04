@@ -65,8 +65,8 @@ clean:
 ifeq ($(OS), Windows_NT)
 	if exist lib rd /s /q lib
 	if exist include rd /s /q include
-	if exist suzu-music-linux.exe del /q /f suzu-music-linux.exe
-	if exist suzu-music-linux-debug.exe del /q /f suzu-music-linux-debug.exe
+	if exist suzu-music-win.exe del /q /f suzu-music-win.exe
+	if exist suzu-music-win-debug.exe del /q /f suzu-music-win-debug.exe
 else 
 	rm -rfv ./lib
 	rm -rfv ./include
