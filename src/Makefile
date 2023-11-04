@@ -19,6 +19,16 @@ else
 	./suzu-music-linux
 endif
 
+build-release: suzu_music_player.c ./lib ./include
+ifeq ($(OS), Windows_NT)
+	echo "Building RELEASE for Windows"
+	gcc suzu_music_player.c -o suzu-music-win.exe $(WARNING_CFLAGS) $(WINDOWS_CFLAGS) $(NOCMD_CFLAG)
+else
+	echo "Building RELEASE for Linux"
+	gcc suzu_music_player.c -o suzu-music-linux $(WARNING_CFLAGS) $(FLTO_CFLAG) $(LINUX_CFLAGS) 
+	echo "==Compilation Complete=="
+endif
+
 debug: suzu_music_player.c ./lib ./include
 ifeq ($(OS), Windows_NT)
 	echo "Building DEBUG for Windows"
@@ -32,6 +42,15 @@ else
 endif
 
 
+build-debug: suzu_music_player.c ./lib ./include
+ifeq ($(OS), Windows_NT)
+	echo "Building DEBUG for Windows"
+	gcc suzu_music_player.c -o suzu-music-win-debug.exe $(DEBUG_CFLAG) $(WARNING_CFLAGS) $(WINDOWS_CFLAGS) $(NOCMD_CFLAG)
+else 
+	echo "Building DEBUG for Linux"
+	gcc suzu_music_player.c -o suzu-music-linux-debug $(WARNING_CFLAGS) $(DEBUG_CFLAG) $(LINUX_CFLAGS) 
+	echo "==Compilation Complete=="
+endif
 
 ./lib: lib/libraylib.a 
 
