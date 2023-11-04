@@ -15,6 +15,8 @@
 
 #define MOCHABASE                                                              \
   (Color) { 30, 30, 46, 255 }
+#define MOCHACRUST																														 \
+  (Color) { 17, 17, 17, 255 }
 #define MOCHATEXT                                                              \
   (Color) { 205, 214, 244, 255 }
 #define MOCHABLUE                                                              \
@@ -115,7 +117,7 @@ int main(void) {
   initialize_frame_buffer();
   Music currentMusic;
 
-  RenderTexture2D renderTex = LoadRenderTexture(512, 2);
+  RenderTexture2D renderTex = LoadRenderTexture(4096, 2);
   RenderTexture2D screenTex = LoadRenderTexture(2560, 1440);
   Shader fftVisualizerShader = LoadShader(0, "resources/shaders/music.fs");
   int xyLoc = GetShaderLocation(fftVisualizerShader, "windowres");
@@ -220,8 +222,8 @@ int main(void) {
               0.5;
           spectrum_t[k] =
               (global_audio_buffer[k].left + global_audio_buffer[k].right) *
-                  0.25 +
-              1;
+                  0.125 +
+              0.5;
         }
         spectrum[k] = spectrum[k] * hannCoeffs[k];
       }
@@ -257,9 +259,9 @@ int main(void) {
           new_color = 0;
         }
         Color c = {new_color, 0, 0, 255};
-        int x_log = (log10f(k) / log10f(N / 2)) * 512;
-        int x_log_next = (log10f(k + 1) / log10f(N / 2)) * 512;
-        h = 256 * (smooth[k] / peak);
+        int x_log = (log10f(k) / log10f(N / 2)) * 4096;
+        int x_log_next = (log10f(k + 1) / log10f(N / 2)) * 4096;
+        h = 512 * (smooth[k] / peak);
         cell_width = x_log_next - x_log;
         DrawRectangle(x_log, 0, cell_width, 1, c);
         // For Debug
@@ -275,7 +277,7 @@ int main(void) {
           new_color = 0;
         }
         Color c = {0, new_color, 0, 255};
-        int xy = ((float)k / (float)N) * 512;
+        int xy = ((float)k / (float)N) * 4096;
         DrawRectangle(xy, 1, 1, 1, c);
         // For Debug
         // DrawRectangle(xy, 127, 1, 128, c);
@@ -288,7 +290,7 @@ int main(void) {
       EndTextureMode();
 
       BeginDrawing();
-      ClearBackground(MOCHABASE);
+      ClearBackground(MOCHACRUST);
       BeginShaderMode(fftVisualizerShader);
       SetShaderValueTexture(fftVisualizerShader, texLoc, renderTex.texture);
       DrawTexturePro(screenTex.texture,
@@ -308,7 +310,7 @@ int main(void) {
       EndDrawing();
     } else {
       BeginDrawing();
-      ClearBackground(MOCHABASE);
+      ClearBackground(MOCHACRUST);
       DrawText("Drag and Drop a Music file to start", w / 2 - 220, h / 2, 24,
                MOCHATEXT);
       EndDrawing();
@@ -318,6 +320,7 @@ int main(void) {
   }
 
   if (trackLoaded) {
+    StopMusicStream(currentMusic);
     UnloadMusicStream(currentMusic);
     DetachAudioStreamProcessor(currentMusic.stream, callback_audio);
   }
