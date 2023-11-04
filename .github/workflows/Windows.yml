@@ -1,0 +1,28 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: | 
+        iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
+        scoop install gcc
+        scoop install mingw
+    - name: Build RELEASE
+      run: | 
+        cd src/
+        mingw32-make build-release
+
+    - name: Build DEBUG
+      run: cd src/ && mingw32-make build-release
