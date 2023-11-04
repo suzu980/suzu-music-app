@@ -16,8 +16,9 @@ jobs:
 
     - name: Install dependencies
       run: | 
-        sudo apt update && sudo apt upgrade
-        sudo apt install libx11-dev mesa-common-dev libglu1-mesa-dev libxrandr-dev libxi-dev
+        sudo apt-get update -qq
+        sudo apt-get install gcc-multilib
+        sudo apt-get install -y --no-install-recommends libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev
 
     - name: Build RELEASE
       run: cd src/ && make build-release
