@@ -1,4 +1,3 @@
-SHELL=cmd
 WARNING_CFLAGS = -Wall -Wextra -Wpedantic -Wno-missing-braces
 DEBUG_CFLAG = -g
 NOCMD_CFLAG = -mwindows
@@ -71,7 +70,7 @@ ifeq ($(OS), Windows_NT)
 else 
 	rm -rfv ./lib
 	rm -rfv ./include
-	rm suzu-music-linux 
-	rm suzu-music-linux-debug
+	rm -f suzu-music-linux 
+	rm -f suzu-music-linux-debug
 endif
 	$(MAKE) -C ../raylib/src/ -f Makefile clean
