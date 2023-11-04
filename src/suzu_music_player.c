@@ -110,7 +110,7 @@ int main(void) {
   InitWindow(INITIALSCREEN_WIDTH, INITIALSCREEN_HEIGHT, "Music Visualizer");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(65536);
-  SetTargetFPS(120);
+  SetTargetFPS(60);
   initialize_coeff();
   initialize_frame_buffer();
   Music currentMusic;
@@ -304,7 +304,7 @@ int main(void) {
       //                            (float)-renderTex.texture.height},
       //                (Vector2){0, 0}, WHITE);
 
-      DrawFPS(50, 50);
+      //DrawFPS(50, 50);
       EndDrawing();
     } else {
       BeginDrawing();
