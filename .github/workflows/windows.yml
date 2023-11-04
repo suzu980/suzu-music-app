@@ -16,7 +16,7 @@ jobs:
 
     - name: Install dependencies
       run: | 
-        iwr -useb get.scoop.sh | iex
+        iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
         scoop install gcc
         scoop install mingw
 
