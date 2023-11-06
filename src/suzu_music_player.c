@@ -29,7 +29,7 @@
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-const size_t N = 8192; // 4096;
+const size_t N = 16384;//8192; // 4096;
 
 typedef struct {
   float left;
@@ -244,7 +244,7 @@ int main(void) {
         }
         if (peak < magnitudes[k])
           peak = magnitudes[k];
-        smooth[k] += (magnitudes[k] - smooth[k]) * 10.0 * deltaTime;
+        smooth[k] += (magnitudes[k] - smooth[k]) * 9.0 * deltaTime;
       }
 
       BeginTextureMode(renderTex);

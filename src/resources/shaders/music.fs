@@ -17,7 +17,6 @@ void main()
 		freqMap.y *= 0.5;
 		freqMap.y -= 0.5; 
 		spectMap.y *= 0.5;
-		//spectMap.y -= 0.5; 
 		float t = fragTexCoord.x/1.0;
 		float tbg = fragTexCoord.y/1.0;
 		vec4 texelColor = texture(audioFreq, freqMap); 
