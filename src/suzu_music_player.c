@@ -29,7 +29,7 @@
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-const size_t N = 16384;//8192; // 4096;
+const size_t N =16384;//8192; // 4096;
 
 typedef struct {
   float left;
@@ -112,7 +112,7 @@ int main(void) {
   InitWindow(INITIALSCREEN_WIDTH, INITIALSCREEN_HEIGHT, "Music Visualizer");
   InitAudioDevice();
   SetAudioStreamBufferSizeDefault(65536);
-  SetTargetFPS(60);
+  SetTargetFPS(120);
   initialize_coeff();
   initialize_frame_buffer();
   Music currentMusic;
@@ -235,6 +235,7 @@ int main(void) {
       float magnitudes[N / 2];
 
       /// LOG SCALE
+			float smooth_factor = 9.0;
       for (size_t k = 0; k < (N / 2); ++k) {
         float r = crealf(fft_out[k]);
         float i = cimag(fft_out[k]);
@@ -244,43 +245,40 @@ int main(void) {
         }
         if (peak < magnitudes[k])
           peak = magnitudes[k];
-        smooth[k] += (magnitudes[k] - smooth[k]) * 9.0 * deltaTime;
+        smooth[k] += (magnitudes[k] - smooth[k]) * smooth_factor * deltaTime;
       }
 
       BeginTextureMode(renderTex);
       ClearBackground(BLACK);
-      for (size_t k = 0; k < (N / 2); ++k) {
-        int cell_width, new_color;
-        new_color = 255 * (smooth[k] / peak);
-        if (new_color > 255) {
-          new_color = 255;
+      for (size_t k = 0; k < (N); ++k) {
+				if(k < (N/2)){
+        int cell_width, fft_color;
+        fft_color = 255 * (smooth[k] / peak);
+        if (fft_color > 255) {
+          fft_color = 255;
         }
-        if (new_color < 0) {
-          new_color = 0;
+        if (fft_color < 0) {
+          fft_color = 0;
         }
-        Color c = {new_color, 0, 0, 255};
+        Color c = {fft_color, 0, 0, 255};
         int x_log = (log10f(k) / log10f(N / 2)) * 4096;
         int x_log_next = (log10f(k + 1) / log10f(N / 2)) * 4096;
         h = 512 * (smooth[k] / peak);
         cell_width = x_log_next - x_log;
         DrawRectangle(x_log, 0, cell_width, 1, c);
-        // For Debug
-        // DrawRectangle(x_log, 127-h, cell_width, h, c);
-      }
-      for (size_t k = 0; k < (N); ++k) {
-        int new_color;
-        new_color = 255 * spectrum_t[k];
-        if (new_color > 255) {
-          new_color = 255;
+
+				}
+        int spect_color;
+        spect_color = 255 * spectrum_t[k];
+        if (spect_color > 255) {
+          spect_color = 255;
         }
-        if (new_color < 0) {
-          new_color = 0;
+        if (spect_color < 0) {
+          spect_color = 0;
         }
-        Color c = {0, new_color, 0, 255};
+        Color c2 = {0, spect_color, 0, 255};
         int xy = ((float)k / (float)N) * 4096;
-        DrawRectangle(xy, 1, 1, 1, c);
-        // For Debug
-        // DrawRectangle(xy, 127, 1, 128, c);
+        DrawRectangle(xy, 1, 1, 1, c2);
       }
       EndTextureMode();
 
@@ -306,7 +304,7 @@ int main(void) {
       //                            (float)-renderTex.texture.height},
       //                (Vector2){0, 0}, WHITE);
 
-      //DrawFPS(50, 50);
+      DrawFPS(50, 50);
       EndDrawing();
     } else {
       BeginDrawing();
